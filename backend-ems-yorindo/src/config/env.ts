@@ -6,9 +6,23 @@ function parseBoolean(value: string | undefined, defaultValue = false) {
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 }
 
+function parseCorsOrigins(value: string | undefined): string[] {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return ["http://localhost:5173", "http://localhost:5174"];
+  }
+
+  return trimmed
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? 5000),
+  corsOrigins: parseCorsOrigins(process.env.CORS_ORIGIN),
   rabbitmqUrl: process.env.RABBITMQ_URL?.trim() || "amqp://guest:guest@localhost:5672",
   emailQueueName: process.env.EMAIL_QUEUE_NAME?.trim() || "email.send",
   emailQueuePrefetch: Number(process.env.EMAIL_QUEUE_PREFETCH ?? 1),

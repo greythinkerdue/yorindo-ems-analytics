@@ -13,6 +13,7 @@ import {
   errorHandler,
   notFoundHandler,
 } from "./middlewares/error.middleware.ts";
+import { env } from "./config/env.ts";
 
 const app = express();
 
@@ -20,7 +21,7 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: env.corsOrigins,
     credentials: true,
   }),
 );
