@@ -91,6 +91,7 @@ const mapEvent = (item: EventApiItem): Event => ({
     item.registeredCount ??
     item.approvedCount ??
     0,
+  checked_in_count: item.checkedInCount ?? 0,
   created_at: item.created_at ?? item.createdAt ?? new Date().toISOString(),
   updated_at: item.updated_at ?? item.updatedAt ?? new Date().toISOString(),
 })

@@ -154,7 +154,10 @@ export default function RegistrationReviewPage() {
 
       const res = await fetch("/api/v1/visitor/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
         body: JSON.stringify(payload),
       });
 

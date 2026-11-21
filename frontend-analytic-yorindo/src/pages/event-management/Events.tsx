@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, FilePlus2, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AlignLeft, Briefcase, Calendar, Clock, FilePlus2, MapPin, Pencil, Plus, Tag, Trash2, X } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import type { AppDispatch } from "@/store/store";
@@ -12,11 +12,15 @@ import { api } from "@/services/api";
 type EventStatus = "Published" | "Ongoing" | "Draft" | "Closed";
 
 const statusColor: Record<EventStatus, string> = {
-  Published: "bg-[#E6F9F0] text-[#22C55E]",
-  Ongoing: "bg-[#EAF1FF] text-[#3B82F6]",
-  Draft: "bg-[#F3F4F6] text-[#6B7280]",
-  Closed: "bg-[#F3F4F6] text-[#9CA3AF]",
+  Published: "border border-emerald-200 bg-emerald-100 text-emerald-700",
+  Ongoing: "border border-blue-200 bg-blue-100 text-blue-700",
+  Draft: "border border-amber-200 bg-amber-100 text-amber-700",
+  Closed: "border border-slate-300 bg-slate-200 text-slate-600",
 };
+
+/** Kelas form standar yang dipakai bersama modal event. */
+const MODAL_FIELD_CLASS =
+  "h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#1a3fa8] focus:ring-2 focus:ring-[#1a3fa8]/15 disabled:cursor-not-allowed disabled:opacity-60";
 
 const tabs = ["All", "Draft", "Published", "Ongoing", "Closed"] as const;
 type TabType = (typeof tabs)[number];
@@ -355,6 +359,9 @@ const Events = () => {
         description: event.description,
         industry: event.industry,
         progress: Math.min(Math.max(pct, 0), 100),
+        capacityTotal: event.max_capacity,
+        approved: event.registered_count,
+        checkedIn: event.checked_in_count ?? 0,
       };
     });
   }, [events]);
@@ -503,10 +510,31 @@ const Events = () => {
               <div className="mt-5">
                 <div className="mb-1 flex justify-between text-xs text-[#6B7280]">
                   <span>Registration</span>
-                  <span>{event.progress}%</span>
+                  <span>{event.approved + event.checkedIn} / {event.capacityTotal}</span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5E7EB]">
-                  <div className="h-2 bg-[#3B82F6]" style={{ width: `${event.progress}%` }} />
+                <div className="flex h-2 w-full overflow-hidden rounded-full bg-[#E5E7EB]">
+                  <div
+                    className="h-full bg-[#22C55E] transition-all duration-500"
+                    style={{
+                      width: `${
+                        event.capacityTotal > 0
+                          ? Math.min((event.checkedIn / event.capacityTotal) * 100, 100)
+                          : 0
+                      }%`,
+                    }}
+                  />
+                  <div
+                    className="h-full bg-[#3B82F6] transition-all duration-500"
+                    style={{ width: `${Math.max(event.progress - (event.capacityTotal > 0 ? Math.min((event.checkedIn / event.capacityTotal) * 100, 100) : 0), 0)}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex gap-4 text-[11px] text-[#94A3B8]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#22C55E]" /> {event.checkedIn} checked-in
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#3B82F6]" /> {event.approved} approved
+                  </span>
                 </div>
               </div>
 
@@ -566,180 +594,185 @@ const Events = () => {
         </button>
       </div>
 
-      {/* --- MODAL CREATE EVENT --- */}
+      {/* --- MODAL CREATE / EDIT EVENT --- */}
       {showModal && (
-        <div className="fixed inset-0 z-99 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] bg-white shadow-2xl animate-in zoom-in duration-200">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#F1F5F9] px-8 py-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-[500px] flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl">
+            {/* Header tetap terlihat */}
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-[#F1F5F9] p-2 text-[#0A2647]">
-                  <Calendar size={20} />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1a3fa8]/10 text-[#1a3fa8]">
+                  <Calendar size={18} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#0A2647]">
+                  <h2 className="text-base font-semibold text-slate-800">
                     {modalMode === "edit" ? "Edit Event" : "Create Event"}
                   </h2>
-                  <p className="text-xs text-[#94A3B8]">
+                  <p className="text-xs text-slate-500">
                     {modalMode === "edit"
-                      ? "Update detail event yang dipilih."
-                      : "Fill in the details for your new event."}
+                      ? "Perbarui detail event yang dipilih."
+                      : "Lengkapi detail event baru di bawah ini."}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowModal(false)} className="rounded-full p-2 text-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#0A2647]">
-                <X size={20} />
+              <button
+                onClick={() => setShowModal(false)}
+                aria-label="Tutup"
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            {/* Form Body */}
-            <form onSubmit={modalMode === "edit" ? handleUpdateEvent : handleCreateEvent} className="p-8 space-y-5">
-              {createError && (
-                <div className="rounded-xl bg-red-50 p-4 text-xs font-medium text-red-600 border border-red-100">
-                  {createError}
-                </div>
-              )}
+            <form
+              onSubmit={modalMode === "edit" ? handleUpdateEvent : handleCreateEvent}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              {/* Hanya area ini yang scroll */}
+              <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto bg-white px-5 py-4">
+                {createError && (
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-medium text-danger">
+                    {createError}
+                  </div>
+                )}
 
-              {/* Event Name */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                  <Calendar size={16} className="text-[#94A3B8]" />
-                  Event Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter event name"
-                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] focus:ring-4 focus:ring-blue-50 transition-all"
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                />
-              </div>
-
-              {/* Location */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                  <MapPin size={16} className="text-[#94A3B8]" />
-                  Location
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter event location"
-                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] transition-all"
-                  value={newEvent.location}
-                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                />
-              </div>
-
-              {/* Date & Time */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                    <Calendar size={16} className="text-[#94A3B8]" />
-                    Date
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                    <Calendar size={14} className="text-[#1a3fa8]" />
+                    Event Name
+                    <span className="text-danger" aria-label="wajib">*</span>
                   </label>
                   <input
-                    type="date"
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] transition-all"
-                    value={newEvent.eventDate}
-                    onChange={(e) => setNewEvent({ ...newEvent, eventDate: e.target.value })}
+                    type="text"
+                    required
+                    placeholder="Masukkan nama event"
+                    className={MODAL_FIELD_CLASS}
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                    <div className="text-[#94A3B8]">🕒</div> {/* Atau import Clock dari lucide */}
-                    Time
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                    <MapPin size={14} className="text-[#1a3fa8]" />
+                    Location
                   </label>
                   <input
-                    type="time"
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] transition-all"
-                    value={newEvent.eventTime}
-                    onChange={(e) => setNewEvent({ ...newEvent, eventTime: e.target.value })}
+                    type="text"
+                    placeholder="Masukkan lokasi event"
+                    className={MODAL_FIELD_CLASS}
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
                   />
                 </div>
-              </div>
 
-              {/* Status & Industry */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                    <div className="text-[#94A3B8]">🏷️</div>
-                    Status
-                  </label>
-                  <select
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] transition-all appearance-none cursor-pointer"
-                    value={newEvent.status}
-                    onChange={(e) => setNewEvent({ ...newEvent, status: e.target.value })}
-                    disabled={modalMode === "create"}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                  {modalMode === "create" && (
-                    <p className="text-xs text-[#94A3B8]">
-                      Event baru otomatis dibuat sebagai draft, lalu status bisa diubah saat edit.
-                    </p>
-                  )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <Calendar size={14} className="text-[#1a3fa8]" />
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      className={MODAL_FIELD_CLASS}
+                      value={newEvent.eventDate}
+                      onChange={(e) => setNewEvent({ ...newEvent, eventDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <Clock size={14} className="text-[#1a3fa8]" />
+                      Time
+                    </label>
+                    <input
+                      type="time"
+                      className={MODAL_FIELD_CLASS}
+                      value={newEvent.eventTime}
+                      onChange={(e) => setNewEvent({ ...newEvent, eventTime: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                    <div className="text-[#94A3B8]">🏢</div>
-                    Industry
-                  </label>
-                  <select
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] transition-all appearance-none cursor-pointer"
-                    value={newEvent.industryId}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      const selectedName = industries.find(i => i._id === selectedId)?.name || "";
-                      setNewEvent({ 
-                        ...newEvent, 
-                        industryId: selectedId, 
-                        industryName: selectedName 
-                      });
-                    }}
-                  >
-                    {industries.length > 0 ? (
-                      industries.map((ind) => (
-                        <option key={ind._id} value={ind._id}>{ind.name}</option>
-                      ))
-                    ) : (
-                      <option value="">Loading industries...</option>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <Tag size={14} className="text-[#1a3fa8]" />
+                      Status
+                    </label>
+                    <select
+                      className={MODAL_FIELD_CLASS}
+                      value={newEvent.status}
+                      onChange={(e) => setNewEvent({ ...newEvent, status: e.target.value })}
+                      disabled={modalMode === "create"}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                    {modalMode === "create" && (
+                      <p className="text-[11px] text-slate-500">
+                        Event baru otomatis berstatus draft.
+                      </p>
                     )}
-                  </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <Briefcase size={14} className="text-[#1a3fa8]" />
+                      Industry
+                    </label>
+                    <select
+                      className={MODAL_FIELD_CLASS}
+                      value={newEvent.industryId}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedName = industries.find((i) => i._id === selectedId)?.name || "";
+                        setNewEvent({
+                          ...newEvent,
+                          industryId: selectedId,
+                          industryName: selectedName,
+                        });
+                      }}
+                    >
+                      {industries.length > 0 ? (
+                        industries.map((ind) => (
+                          <option key={ind._id} value={ind._id}>{ind.name}</option>
+                        ))
+                      ) : (
+                        <option value="">Loading industries...</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                    <AlignLeft size={14} className="text-[#1a3fa8]" />
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Masukkan deskripsi event"
+                    className={`${MODAL_FIELD_CLASS} min-h-[76px] resize-none py-2`}
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  />
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-bold text-[#43556E]">
-                  <div className="text-[#94A3B8]">📝</div>
-                  Description
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Enter event description"
-                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFD] px-4 py-3 text-sm outline-none focus:border-[#3B82F6] transition-all resize-none"
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                />
-              </div>
-
-              {/* Footer Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4">
+              {/* Footer tetap terlihat */}
+              <div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-xl px-6 py-3 text-sm font-bold text-[#64748B] hover:bg-[#F1F5F9] transition-all"
+                  className="h-9 rounded-lg px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
                 >
                   Discard
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-xl bg-[#0A2647] px-8 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 hover:bg-[#133A6F] disabled:opacity-50 active:scale-95 transition-all"
+                  className="h-9 rounded-lg bg-[#1a3fa8] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#16357f] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting
                     ? "Processing..."

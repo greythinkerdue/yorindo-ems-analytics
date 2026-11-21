@@ -3,7 +3,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Clock3, LoaderCircle, Search, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { api, apiPaths } from "@/services/api";
 import {
   Table,
@@ -226,7 +225,7 @@ export function CampaignHistory() {
   const draftCount = history?.summary.statusCounts.draft ?? 0;
 
   return (
-    <DashboardLayout>
+    <div className="mx-auto w-full max-w-6xl">
       <title>Yorindo EMS - Campaign History</title>
       <div className="space-y-8">
         <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
@@ -512,6 +511,6 @@ export function CampaignHistory() {
           </div>
         </section>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

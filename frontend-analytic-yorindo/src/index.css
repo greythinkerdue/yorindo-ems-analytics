@@ -23,6 +23,28 @@
 }
 
 @layer utilities {
+  /* Warna semantik: makna harus sama di semua modul */
+  .text-success {
+    @apply text-emerald-700;
+  }
+
+  .text-warning {
+    @apply text-amber-700;
+  }
+
+  .text-danger {
+    @apply text-rose-700;
+  }
+
+  .text-info {
+    @apply text-blue-700;
+  }
+
+  /* Border yang cukup kontras di atas kartu putih */
+  .border-field {
+    @apply border-slate-300;
+  }
+
   .rounded-card {
     border-radius: 12px;
   }

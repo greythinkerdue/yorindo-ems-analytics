@@ -50,6 +50,7 @@ export default function VisitorEventRegistrationPage() {
         const res = await fetch(url, {
           headers: {
             "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
           },
         });
 
@@ -162,6 +163,7 @@ export default function VisitorEventRegistrationPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(payload),
       });

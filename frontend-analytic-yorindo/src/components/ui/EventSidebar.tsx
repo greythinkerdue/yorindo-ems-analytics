@@ -4,9 +4,12 @@ import {
   ClipboardList,
   Info,
   MessageSquareText,
+  ScanLine,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import WorkspaceSidebar from "@/components/ui/WorkspaceSidebar";
+import { usePermission } from "@/hooks/usePermission";
 
 type SidebarProps = {
   eventId: string;
@@ -14,6 +17,13 @@ type SidebarProps = {
   setCollapsed: Dispatch<SetStateAction<boolean>>;
   mobileOpen: boolean;
   setMobileOpen: Dispatch<SetStateAction<boolean>>;
+};
+
+type EventWorkspaceItem = {
+  label: string;
+  to: string;
+  icon: LucideIcon;
+  end?: boolean;
 };
 
 export default function EventSidebar({
@@ -24,6 +34,50 @@ export default function EventSidebar({
   setMobileOpen,
 }: SidebarProps) {
   const resolvedEventId = eventId || "unknown";
+  const canViewParticipants = usePermission("registrations:view");
+  const canCheckIn = usePermission("registrations:checkin");
+
+  const items: EventWorkspaceItem[] = [
+    {
+      label: "Event Detail",
+      to: `/events/${resolvedEventId}`,
+      icon: Info,
+      end: true,
+    },
+    ...(canViewParticipants
+      ? [
+          {
+            label: "Participants",
+            to: `/events/${resolvedEventId}/participants`,
+            icon: Users,
+          },
+        ]
+      : []),
+    ...(canCheckIn
+      ? [
+          {
+            label: "Check-In Desk",
+            to: `/events/${resolvedEventId}/check-in`,
+            icon: ScanLine,
+          },
+        ]
+      : []),
+    {
+      label: "Event Analytics",
+      to: `/events/${resolvedEventId}/analytics`,
+      icon: BarChart3,
+    },
+    {
+      label: "Survey Analytics",
+      to: `/events/${resolvedEventId}/survey-analytics`,
+      icon: ClipboardList,
+    },
+    {
+      label: "Feedback Analytics",
+      to: `/events/${resolvedEventId}/feedback-analytics`,
+      icon: MessageSquareText,
+    },
+  ];
 
   return (
     <WorkspaceSidebar
@@ -33,34 +87,7 @@ export default function EventSidebar({
       setMobileOpen={setMobileOpen}
       title="Event Workspace"
       eyebrow="Detail & Analytics"
-      items={[
-        {
-          label: "Event Detail",
-          to: `/events/${resolvedEventId}`,
-          icon: Info,
-          end: true,
-        },
-        {
-          label: "Participants",
-          to: `/events/${resolvedEventId}/participants`,
-          icon: Users,
-        },
-        {
-          label: "Event Analytics",
-          to: `/events/${resolvedEventId}/analytics`,
-          icon: BarChart3,
-        },
-        {
-          label: "Survey Analytics",
-          to: `/events/${resolvedEventId}/survey-analytics`,
-          icon: ClipboardList,
-        },
-        {
-          label: "Feedback Analytics",
-          to: `/events/${resolvedEventId}/feedback-analytics`,
-          icon: MessageSquareText,
-        },
-      ]}
+      items={items}
     />
   );
 }

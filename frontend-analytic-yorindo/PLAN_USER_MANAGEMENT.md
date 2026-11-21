@@ -332,7 +332,7 @@ Do not proceed to frontend until all 11 tests pass.
 
 ### Step 7 — Update AuthContext Types
 
-**File to edit:** `frontend-ems-yorindo/src/context/AuthContext.tsx`
+**File to edit:** `frontend-analytic-yorindo/src/context/AuthContext.tsx`
 
 Add `permissions` to `AuthUser`:
 ```ts
@@ -353,7 +353,7 @@ This is already populated from `/api/v1/auth/me` — once the backend returns it
 
 ### Step 8 — Add `usePermission` Hook
 
-**File to create:** `frontend-ems-yorindo/src/hooks/usePermission.ts`
+**File to create:** `frontend-analytic-yorindo/src/hooks/usePermission.ts`
 
 ```ts
 export function usePermission(permission: string): boolean {
@@ -374,7 +374,7 @@ const canCreate = usePermission("events:create");
 
 ### Step 9 — API Service for Users
 
-**File to create:** `frontend-ems-yorindo/src/services/userService.ts`
+**File to create:** `frontend-analytic-yorindo/src/services/userService.ts`
 
 ```ts
 export interface User {
@@ -399,7 +399,7 @@ toggleUserActive(id)      → PATCH /api/v1/users/:id/toggle-active
 
 ### Step 10 — Route Guards in App.tsx
 
-**File to edit:** `frontend-ems-yorindo/src/App.tsx`
+**File to edit:** `frontend-analytic-yorindo/src/App.tsx`
 
 Add `SuperAdminRoute`:
 ```tsx
@@ -421,7 +421,7 @@ Add route:
 
 ### Step 11 — Users Page
 
-**File to create:** `frontend-ems-yorindo/src/pages/users/Users.tsx`
+**File to create:** `frontend-analytic-yorindo/src/pages/users/Users.tsx`
 
 Layout:
 ```
@@ -447,7 +447,7 @@ Dropdown actions per row: Edit → Deactivate/Activate
 
 ### Step 12 — User Form Modal with Permission Checkboxes
 
-**File to create:** `frontend-ems-yorindo/src/pages/users/UserFormModal.tsx`
+**File to create:** `frontend-analytic-yorindo/src/pages/users/UserFormModal.tsx`
 
 This is the most important UI piece. The modal has two sections:
 
@@ -525,7 +525,7 @@ interface UserFormModalProps {
 
 Once permissions exist, existing pages must respect them.
 
-**File to edit:** `frontend-ems-yorindo/src/pages/events/Events.tsx`
+**File to edit:** `frontend-analytic-yorindo/src/pages/events/Events.tsx`
 
 ```tsx
 const canCreate = usePermission("events:create");
@@ -544,7 +544,7 @@ const canDelete = usePermission("events:delete");
 
 ### Step 14 — Sidebar Nav Link (Role-Gated)
 
-**File to edit:** `frontend-ems-yorindo/src/components/Sidebar.tsx`
+**File to edit:** `frontend-analytic-yorindo/src/components/Sidebar.tsx`
 
 ```tsx
 const { user } = useAuth();

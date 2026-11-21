@@ -22,6 +22,7 @@ import { api } from "@/services/api"
 import type { RootState } from "@/store/store"
 import type { CustomField, FixField, RegistrationForm } from "@/types/registration-form"
 import { defaultFixFields } from "@/utils/mockData"
+import { buildPublicRegistrationUrl } from "@/utils/publicSiteUrl"
 
 type DraftField = {
   localId: string
@@ -159,7 +160,7 @@ function mapCustomFieldType(type?: string): CustomField["type"] {
 
 function buildRegistrationLink(eventId: string, slug?: string) {
   const identifier = slug?.trim() || eventId
-  return `${window.location.origin}/register/${identifier}`
+  return buildPublicRegistrationUrl(identifier)
 }
 
 function buildRegistrationQr(link: string) {

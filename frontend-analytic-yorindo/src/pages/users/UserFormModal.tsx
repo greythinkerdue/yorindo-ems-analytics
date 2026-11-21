@@ -26,10 +26,11 @@ const EMPTY_FORM: UserFormData = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin",
-  admin:       "Admin",
-  staff:       "Staff",
-  scanner:     "Scanner",
+  super_admin:            "Super Admin",
+  admin:                  "Admin",
+  event_operator:         "Event Operator",
+  communication_operator: "Communication Operator",
+  survey_analyst:         "Survey Analyst",
 };
 
 export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFormModalProps) {

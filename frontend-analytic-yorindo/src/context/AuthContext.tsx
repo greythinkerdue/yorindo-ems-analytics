@@ -17,6 +17,8 @@ export interface AuthUser {
   name: string;
   email: string;
   role: string;
+  /** Permission codes dari backend (/auth/me). Dipakai untuk gating aksi operasional. */
+  permissions?: string[];
   exhibitor_id?: string;
   company_name?: string;
   phone?: string;
@@ -115,6 +117,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      clearPersistedUser();
+      setUser(null);
+    };
+
+    window.addEventListener("ems:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("ems:unauthorized", handleUnauthorized);
   }, []);
 
   const requestOtp = async (

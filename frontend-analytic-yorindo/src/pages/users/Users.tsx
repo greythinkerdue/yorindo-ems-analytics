@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import MainDashboard from "@/layouts/MainDashboard";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -23,17 +22,19 @@ import {
 } from "@/services/userService";
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin",
-  admin:       "Admin",
-  staff:       "Staff",
-  scanner:     "Scanner",
+  super_admin:            "Super Admin",
+  admin:                  "Admin",
+  event_operator:         "Event Operator",
+  communication_operator: "Communication Operator",
+  survey_analyst:         "Survey Analyst",
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  super_admin: "bg-violet-100 text-violet-700",
-  admin:       "bg-blue-100 text-blue-700",
-  staff:       "bg-amber-100 text-amber-700",
-  scanner:     "bg-slate-100 text-slate-600",
+  super_admin:            "bg-violet-100 text-violet-700",
+  admin:                  "bg-blue-100 text-blue-700",
+  event_operator:         "bg-emerald-100 text-emerald-700",
+  communication_operator: "bg-amber-100 text-amber-700",
+  survey_analyst:         "bg-sky-100 text-sky-700",
 };
 
 export function Users() {
@@ -117,7 +118,7 @@ export function Users() {
   const endItem   = Math.min(page * limit, total);
 
   return (
-    <MainDashboard>
+    <>
       <div className="space-y-6">
 
         {/* Header */}
@@ -161,8 +162,9 @@ export function Users() {
             <option value="">All Roles</option>
             <option value="super_admin">Super Admin</option>
             <option value="admin">Admin</option>
-            <option value="staff">Staff</option>
-            <option value="scanner">Scanner</option>
+            <option value="event_operator">Event Operator</option>
+            <option value="communication_operator">Communication Operator</option>
+            <option value="survey_analyst">Survey Analyst</option>
           </select>
         </div>
 
@@ -291,6 +293,6 @@ export function Users() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleModalSuccess}
       />
-    </MainDashboard>
+    </>
   );
 }

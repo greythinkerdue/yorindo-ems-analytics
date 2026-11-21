@@ -11,6 +11,11 @@ export default defineConfig({
     },
   },
   server: {
+    // Port tetap 5174: ngrok dan link publik mengarah tepat ke port ini.
+    port: 5174,
+    strictPort: true,
+    // Vite 7 memblokir host asing secara default; izinkan domain ngrok.
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "http://localhost:5000",

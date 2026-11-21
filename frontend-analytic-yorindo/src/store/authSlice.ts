@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
 import type { User } from "@/types/user"
-import { currentUser } from "@/utils/mockData"
 
 interface AuthState {
   user: User | null
@@ -9,9 +8,14 @@ interface AuthState {
   isLoading: boolean
 }
 
+/**
+ * Redux auth adalah sisa demo lama dan TIDAK dipakai untuk mengunci halaman.
+ * Sumber kebenaran login adalah AuthContext (OTP + JWT). Karena itu state
+ * awalnya sengaja kosong agar tidak pernah memberi akses secara default.
+ */
 const initialState: AuthState = {
-  user: currentUser,
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   isLoading: false,
 }
 
@@ -40,8 +44,8 @@ const authSlice = createSlice({
         return
       }
 
-      state.user = currentUser
-      state.isAuthenticated = true
+      state.user = null
+      state.isAuthenticated = false
     },
   },
 })

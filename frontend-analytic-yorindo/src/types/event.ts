@@ -10,6 +10,7 @@ export interface Event {
   category?: string | null
   max_capacity: number
   registered_count: number
+  checked_in_count?: number
   created_at: string
   updated_at: string
 }

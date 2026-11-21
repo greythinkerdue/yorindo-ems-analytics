@@ -34,11 +34,17 @@ export interface UpdateUserData {
   permissions?: string[];
 }
 
-export const SYSTEM_ROLES = ["super_admin", "admin", "staff", "scanner"] as const;
+export const SYSTEM_ROLES = [
+  "super_admin",
+  "admin",
+  "event_operator",
+  "communication_operator",
+  "survey_analyst",
+] as const;
 
 export const PERMISSION_GROUPS = [
   {
-    group: "Events",
+    group: "Events & Operations",
     items: [
       { label: "View events list",       value: "events:view" },
       { label: "Create new events",      value: "events:create" },
@@ -47,15 +53,26 @@ export const PERMISSION_GROUPS = [
     ],
   },
   {
-    group: "Communication",
+    group: "Registrations & Check-In",
     items: [
-      { label: "View communication page", value: "communication:view" },
+      { label: "View registrations",       value: "registrations:view" },
+      { label: "Approve / reject",         value: "registrations:approve" },
+      { label: "Scan & check in participants", value: "registrations:checkin" },
     ],
   },
   {
-    group: "Settings",
+    group: "Communication",
     items: [
-      { label: "View settings page", value: "settings:view" },
+      { label: "View communication page", value: "communication:view" },
+      { label: "Send broadcasts",         value: "communication:send" },
+    ],
+  },
+  {
+    group: "Survey & Analytics",
+    items: [
+      { label: "View surveys",       value: "surveys:view" },
+      { label: "Manage surveys",     value: "surveys:manage" },
+      { label: "View analytics",     value: "analytics:view" },
     ],
   },
 ] as const;

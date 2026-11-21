@@ -50,9 +50,8 @@ The frontend for the **Exhibition / Event Management System (EMS)**: a comprehen
     ```
 
 2.  **Environment Setup**:
-    * Copy `.env.example` to `.env`
-    * Set the backend base URL:
-        `VITE_API_BASE_URL=http://localhost:5000`
+    * Copy `.env.example` to `.env.local`
+    * For local development you can leave all values empty — requests use the Vite proxy.
 
 3.  **Run the development server**:
     ```bash
@@ -60,16 +59,39 @@ The frontend for the **Exhibition / Event Management System (EMS)**: a comprehen
     ```
 
 4.  **Access the application**:
-    Open `http://localhost:5173` in your browser.
+    Open `http://localhost:5174` in your browser (5173 is the backend-adjacent legacy port and is no longer used by a frontend).
 
 ---
 
 ## Environment Variables
 
-* **`VITE_API_BASE_URL`**: Used by the fetch wrapper in `src/services/api.ts` for internal dashboard requests. (Fallback: `http://localhost:5000`).
-* **`VITE_API_URL`** (Optional): Used specifically in the public registration page. If unset, it defaults to the relative path `/api/v1/form-builder/slug`.
+* **`VITE_PUBLIC_SITE_URL`**: Public origin used to build registration links and QR codes (e.g. `https://abcxyz.ngrok-free.dev`). If empty, `window.location.origin` is used — which becomes `localhost` when you open the dashboard locally.
+* **`VITE_API_BASE_URL`**: Base URL used by `src/services/api.ts`. Leave empty to use relative `/api/...` paths through the Vite proxy (required for ngrok).
+* **`VITE_API_URL`** (Optional): Base URL used by the public registration page. Leave empty to use the relative path `/api/v1/form-builder/slug`.
 
 > **Dev Proxy Note**: `vite.config.ts` proxies paths starting with `/api` to `http://localhost:5000` to handle relative requests during development.
+
+---
+
+## Public registration link via ngrok
+
+This app is the single central dashboard (operational + analytics + communication + user management). To share registration links with real participants:
+
+1. Start the backend on `localhost:5000` and this app on `localhost:5174`.
+2. Start one tunnel for the frontend:
+   ```bash
+   ngrok http 5174
+   ```
+3. Copy the HTTPS dev domain from ngrok (e.g. `https://abcxyz.ngrok-free.dev`) and set it in `.env.local`:
+   ```env
+   VITE_PUBLIC_SITE_URL=https://abcxyz.ngrok-free.dev
+   VITE_API_BASE_URL=
+   VITE_API_URL=
+   ```
+4. Restart `npm run dev`; the registration link and QR on Event Detail will now use the public domain.
+5. Optional: add the same domain to the backend `CORS_ORIGIN` if you ever call the API directly from that origin.
+
+> The public registration pages call relative `/api/...` paths, so ngrok forwards them to the Vite dev server, which proxies them to the local backend. The computer running ngrok must stay on while the link is in use.
 
 ---
 

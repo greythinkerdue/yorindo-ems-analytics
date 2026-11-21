@@ -165,7 +165,7 @@ const SummaryCard = ({
   value: string | number;
   icon: React.ElementType;
 }) => (
-  <div className="rounded-[18px] border border-[#D7E1F0] bg-white p-5 shadow-[0_10px_22px_rgba(15,23,42,0.04)]">
+  <div className="rounded-[18px] border border-[#C9D7F3] bg-[#EAF1FF] p-5 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
     <div className="flex items-center justify-between gap-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7B8CA3]">

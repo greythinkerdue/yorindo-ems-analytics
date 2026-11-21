@@ -52,27 +52,23 @@ This document summarizes the current status of the code in `frontend-analytic-yo
 ## 9. How to use
 
 1. Start server: `npm run dev`
-2. Open browser at `http://localhost:5173`
+2. Open browser at `http://localhost:5174`
 3. Registration flow lives in `src/pages/registration-visitor/index.tsx`.
 
 ## 9.1 ngrok public URL
 
-If you need to share or test the app from outside your local network, expose the Vite dev server with ngrok:
+If you need to share or test the app from outside your local network, expose this app's Vite dev server with ngrok:
 
 1. Ensure the app is running locally with `npm run dev`.
-2. Run ngrok for port `5173`:
+2. Run ngrok for port `5174`:
 
 ```bash
-ngrok http 5173
+ngrok http 5174
 ```
 
-3. Copy the generated HTTPS URL from ngrok and use it to access the app remotely.
+3. Copy the HTTPS dev domain from ngrok and set `VITE_PUBLIC_SITE_URL` in `.env.local` so generated registration links and QR codes use the public domain instead of `localhost`.
 
-4. Optional: use a custom hostname if your ngrok plan supports it:
-
-```bash
-ngrok http -hostname=my-subdomain.ngrok.io 5173
-```
+4. A custom hostname requires a paid ngrok plan; the free dev domain is stable per account.
 
 ## 10. Further improvements
 

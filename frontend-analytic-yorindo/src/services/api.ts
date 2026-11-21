@@ -1,4 +1,19 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+/**
+ * Kosong = pakai path relatif `/api/...`, sehingga lewat Vite proxy saat dev
+ * dan lewat origin yang sama saat diakses dari ngrok. Set VITE_API_BASE_URL
+ * hanya kalau backend benar-benar di origin lain.
+ */
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+
+export const API_V1_PREFIX = "/api/v1";
+export const apiPaths = {
+  auth: `${API_V1_PREFIX}/auth`,
+  communications: `${API_V1_PREFIX}/communications`,
+  events: `${API_V1_PREFIX}/events`,
+  users: `${API_V1_PREFIX}/users`,
+  surveys: `${API_V1_PREFIX}/surveys`,
+  analytics: `${API_V1_PREFIX}/analytics`,
+} as const;
 
 export const AUTH_TOKEN_STORAGE_KEY = "ems_auth_token";
 export const AUTH_USER_STORAGE_KEY = "ems_auth_user";
@@ -33,6 +48,17 @@ export function clearPersistedAuthToken() {
   window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
+/** Endpoint yang memang boleh diakses tanpa token. */
+function isPublicPath(path: string) {
+  return (
+    path.startsWith("/api/v1/auth/request-otp") ||
+    path.startsWith("/api/v1/auth/verify-otp") ||
+    path.startsWith("/api/v1/visitor/") ||
+    path.startsWith("/api/v1/form-builder/slug/") ||
+    path.startsWith("/api/v1/feedback")
+  );
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -42,6 +68,7 @@ async function request<T>(
     const headers = new Headers(init.headers);
 
     headers.set("Accept", "application/json");
+    headers.set("ngrok-skip-browser-warning", "true");
 
     if (!(init.body instanceof FormData) && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
@@ -62,6 +89,14 @@ async function request<T>(
         : ((await response.json()) as ApiEnvelope<T> | null);
 
     if (!response.ok) {
+      // 401 = sesi tidak valid → logout. 403 = kurang permission → cukup tampilkan
+      // pesan error, jangan mengeluarkan user dari aplikasi.
+      if (response.status === 401 && token && !isPublicPath(path)) {
+        clearPersistedAuthToken();
+        window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+        window.dispatchEvent(new CustomEvent("ems:unauthorized"));
+      }
+
       return {
         data: null,
         error: payload?.message ?? "Request gagal diproses.",
