@@ -27,3 +27,16 @@ lerna-debug.log*
 *.sw?
 .codex
 .history/
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Build / cache artifacts
+coverage/
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# Temporary verification scripts
+__*.mts

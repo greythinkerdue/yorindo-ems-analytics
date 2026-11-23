@@ -28,3 +28,14 @@ dist-ssr
 *.env
 .env
 .codex
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Build / cache artifacts
+coverage/
+*.tsbuildinfo
+
+# Temporary verification scripts
+__*.mts
