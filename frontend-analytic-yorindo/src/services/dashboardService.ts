@@ -7,6 +7,7 @@ export interface DashboardKpis {
   approvalRate: number;
   attendanceRate: number;
   pendingApprovals: number;
+  totalRejected: number;
   ticketsNotSent: number;
 }
 

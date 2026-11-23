@@ -17,6 +17,7 @@ export interface DashboardKpis {
   approvalRate: number;
   attendanceRate: number;
   pendingApprovals: number;
+  totalRejected: number;
   ticketsNotSent: number;
 }
 
@@ -265,6 +266,10 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
     (total, row) => total + row.pending,
     0,
   );
+  const totalRejected = aggregateRows.reduce(
+    (total, row) => total + row.rejected,
+    0,
+  );
   const ticketsNotSent = aggregateRows.reduce(
     (total, row) => total + row.ticketsNotSent,
     0,
@@ -283,6 +288,7 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
       totalApproved > 0 ? (totalAttendance / totalApproved) * 100 : 0,
     ),
     pendingApprovals,
+    totalRejected,
     ticketsNotSent,
   };
 
