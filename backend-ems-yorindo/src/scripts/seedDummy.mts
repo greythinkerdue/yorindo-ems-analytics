@@ -419,6 +419,22 @@ async function main() {
   const admin = await User.findOne({ role: "super_admin" }).lean<any>();
   if (!admin) throw new Error("Super admin user tidak ditemukan; jalankan seed utama dulu.");
 
+  // Audit event/registrasi tetap memakai admin pertama (Daffa), tetapi campaign
+  // dibagikan ke beberapa super admin agar history tidak semuanya "by Daffa".
+  // Cece didahulukan supaya akun yang biasa dipakai memiliki draft sendiri.
+  const campaignAdmins = await User.find({ role: "super_admin" }).lean<any[]>();
+  const ceceAdmin = campaignAdmins.find((item) =>
+    /cecilya|cece|caroline/i.test(String(item.name ?? "")),
+  );
+  const orderedCampaignAdmins = ceceAdmin
+    ? [
+        ceceAdmin,
+        ...campaignAdmins.filter(
+          (item) => String(item._id) !== String(ceceAdmin._id),
+        ),
+      ]
+    : campaignAdmins;
+
   const nameTokens = await loadNameTokens();
   if (!nameTokens.format?.length || !nameTokens.theme?.length) {
     throw new Error("Kosakata nama event belum ada. Jalankan npm run seed:event-names dulu.");
@@ -968,6 +984,32 @@ async function main() {
   }
 
   const campaignCount = Math.min(8, events.length);
+  const campaignStatuses = [
+    "draft",
+    "sent",
+    "sent",
+    "partial",
+    "queued",
+    "failed",
+    "sent",
+    "processing",
+  ] as const;
+  const campaignTemplates = [
+    "executive_brief",
+    "event_spotlight",
+    "minimal_notice",
+  ] as const;
+  const campaignSubjectTemplates = [
+    "Konfirmasi pendaftaran {format} {theme} {year}",
+    "Jadwal dan lokasi {format} {theme}",
+    "Pengingat pendaftaran {format} {theme}",
+    "Update terbaru {format} {theme} {year}",
+    "Tiket {format} {theme} siap dikirim",
+    "Konfirmasi kehadiran {format} {theme}",
+    "Undangan resmi {format} {theme} {year}",
+    "Pemberitahuan akhir {format} {theme}",
+  ];
+
   for (let index = 0; index < campaignCount; index += 1) {
     const event = events[index];
     const values: Record<string, string | number> = event._copyValues ?? {};
@@ -987,16 +1029,39 @@ async function main() {
         };
       });
 
+    const status = campaignStatuses[index % campaignStatuses.length];
+    const templateId = campaignTemplates[index % campaignTemplates.length];
+    const creator =
+      orderedCampaignAdmins[index % orderedCampaignAdmins.length] ?? admin;
     const subject = fillTemplate(
-      faker.helpers.arrayElement(nameTokens.campaign_subject ?? ["{format} {theme}"]),
+      campaignSubjectTemplates[index % campaignSubjectTemplates.length] ?? "{format} {theme}",
       values,
     );
-    const body = fillTemplate(
-      faker.helpers.arrayElement(nameTokens.campaign_body ?? ["{format} {theme}"]),
-      values,
-    );
-    const status = faker.helpers.arrayElement(["sent", "sent", "draft", "partial", "failed"]);
-    const successCount = status === "sent" ? recipients.length : status === "partial" ? Math.ceil(recipients.length / 2) : 0;
+    const body = [
+      "Halo peserta,",
+      "",
+      `Informasi terbaru untuk ${subject} dapat dibaca pada pesan ini.`,
+      "",
+      "Terima kasih,",
+      "Yorindo EMS",
+    ].join("\n");
+
+    const successCount =
+      status === "sent"
+        ? recipients.length
+        : status === "partial"
+          ? Math.ceil(recipients.length / 2)
+          : 0;
+    const failedRecipients =
+      status === "failed"
+        ? recipients
+        : status === "partial"
+          ? recipients.slice(successCount)
+          : [];
+    const failures = failedRecipients.map((recipient) => ({
+      email: recipient.email,
+      reason: "Alamat email tidak dapat dihubungi.",
+    }));
 
     const sentStart = eventTime < Date.now() ? eventTime - 30 * DAY : Date.now() - 30 * DAY;
     const sentEnd = eventTime < Date.now() ? eventTime : Date.now();
@@ -1004,6 +1069,7 @@ async function main() {
       from: new Date(sentStart),
       to: new Date(Math.max(sentStart + 1000, sentEnd)),
     });
+    const hasSentAt = status === "sent" || status === "partial" || status === "failed";
 
     await CommunicationCampaign.findOneAndUpdate(
       {
@@ -1012,12 +1078,12 @@ async function main() {
         "filtersSnapshot.campaignIndex": index,
       },
       {
-        $setOnInsert: {
+        $set: {
           eventId: new Types.ObjectId(String(event._id)),
-          createdBy: admin._id,
-          sentBy: status === "sent" || status === "partial" ? admin._id : null,
+          createdBy: creator._id,
+          sentBy: hasSentAt ? creator._id : null,
           status,
-          templateId: faker.helpers.arrayElement(["executive_brief", "registration_reminder", "event_update"]),
+          templateId,
           previewText: subject,
           subject,
           bodyHtml: body.split("\n\n").map((part) => `<p>${part}</p>`).join(""),
@@ -1027,10 +1093,10 @@ async function main() {
           audience: { recipientCount: recipients.length, recipients },
           delivery: {
             successCount,
-            failureCount: recipients.length - successCount,
-            failures: [],
+            failureCount: failures.length,
+            failures,
           },
-          sentAt: status === "sent" || status === "partial" ? sentAt : null,
+          sentAt: hasSentAt ? sentAt : null,
         },
       },
       { upsert: true, returnDocument: "after" },

@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Clock3, LoaderCircle, Search, SendHorizontal } from "lucide-react";
+import { Clock3, Info, LoaderCircle, Search, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, apiPaths } from "@/services/api";
@@ -74,6 +74,15 @@ const STATUS_OPTIONS: Array<{
   { value: "draft", label: "Drafts" },
 ];
 
+const STATUS_HELP = [
+  "Draft: pesan tersimpan, belum dikirim.",
+  "Queued: menunggu antrean pengiriman.",
+  "Processing: sedang dikirim ke penerima.",
+  "Sent: seluruh penerima berhasil menerima email.",
+  "Partial: sebagian berhasil, sebagian gagal.",
+  "Failed: seluruh pengiriman gagal.",
+].join("\n");
+
 function readStatus(value: string | null): CampaignStatus {
   return STATUS_OPTIONS.some((option) => option.value === value)
     ? (value as CampaignStatus)
@@ -108,6 +117,7 @@ function formatEventDate(value: string | null) {
 
 const statusStyles: Record<string, string> = {
   sent: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  partial: "bg-indigo-50 text-indigo-600 border-indigo-200",
   queued: "bg-blue-50 text-blue-600 border-blue-200",
   processing: "bg-yellow-50 text-yellow-600 border-yellow-200",
   draft: "bg-[#F8FAFD] text-[#94A3B8] border-[#E3EAF5]",
@@ -116,6 +126,7 @@ const statusStyles: Record<string, string> = {
 
 const dotStyles: Record<string, string> = {
   sent: "bg-emerald-400",
+  partial: "bg-indigo-400",
   queued: "bg-blue-400",
   processing: "bg-yellow-400",
   draft: "bg-slate-300",
@@ -374,7 +385,16 @@ export function CampaignHistory() {
                   <TableHead className="px-4">Campaign</TableHead>
                   <TableHead className="px-4">Delivery</TableHead>
                   <TableHead className="w-[100px] px-6 text-center">
-                    Status
+                    <span className="inline-flex items-center justify-center gap-1.5">
+                      Status
+                      <span
+                        title={STATUS_HELP}
+                        aria-label={STATUS_HELP}
+                        className="inline-flex cursor-help items-center text-[#94A3B8] transition hover:text-[#0A2647]"
+                      >
+                        <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                      </span>
+                    </span>
                   </TableHead>
                   <TableHead className="text-center px-6">Action</TableHead>
                 </TableRow>
