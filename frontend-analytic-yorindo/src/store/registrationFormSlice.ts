@@ -5,7 +5,6 @@ import type {
   CustomField,
   RegistrationForm,
 } from "@/types/registration-form"
-import { defaultFixFields, mockRegistrationForms } from "@/utils/mockData"
 
 interface RegistrationFormState {
   forms: RegistrationForm[]
@@ -14,7 +13,7 @@ interface RegistrationFormState {
 }
 
 const initialState: RegistrationFormState = {
-  forms: mockRegistrationForms,
+  forms: [],
   isLoading: false,
   selectedForm: null,
 }
@@ -30,18 +29,19 @@ const registrationFormSlice = createSlice({
       state,
       action: PayloadAction<{ event_id: string; data: CreateRegistrationFormDTO }>
     ) => {
+      const fixFields = action.payload.data.fix_fields ?? []
       const newForm: RegistrationForm = {
         form_id: `FORM-${Date.now()}`,
         event_id: action.payload.event_id,
         title: action.payload.data.title,
-        fix_fields: defaultFixFields,
+        fix_fields: fixFields,
         custom_fields: action.payload.data.custom_fields.map((field, index) => ({
           ...field,
           id: `custom-${Date.now()}-${index}`,
-          order: defaultFixFields.length + index + 1,
+          order: fixFields.length + index + 1,
         })),
-        link_pendaftaran: `https://yorindo.com/register/${action.payload.event_id}`,
-        qr_code: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=register/${action.payload.event_id}`,
+        link_pendaftaran: action.payload.data.link_pendaftaran ?? "",
+        qr_code: action.payload.data.qr_code ?? "",
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

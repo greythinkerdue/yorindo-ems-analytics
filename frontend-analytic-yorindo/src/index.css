@@ -5,12 +5,49 @@
 @layer base {
   :root {
     --radius-md: 12px;
+
+    /* Skala visual seluruh aplikasi. Browser zoom tetap 100%.
+       Diubah lewat VITE_UI_SCALE di main.tsx (default 0.9 = 90%). */
+    --ui-scale: 0.9;
   }
 }
 
 @layer components {
   .card {
     @apply rounded-[12px] border border-neutral-200 bg-white p-4 shadow-sm;
+  }
+
+  /* Shell halaman internal: dipakai Event, Communication, Campaign, Users. */
+  .workspace-shell {
+    @apply min-h-screen space-y-8 rounded-[28px] border border-[#D7E1F0] bg-[#F8FAFD] p-8 shadow-[0_14px_30px_rgba(10,38,71,0.05)];
+  }
+
+  .workspace-header {
+    @apply flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between;
+  }
+
+  .workspace-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.28em] text-[#94A3B8];
+  }
+
+  .workspace-title {
+    @apply text-[2.15rem] font-bold tracking-[-0.04em] text-[#0A2647];
+  }
+
+  .workspace-subtitle {
+    @apply max-w-2xl text-sm leading-7 text-[#5B6B7F];
+  }
+
+  .workspace-toolbar {
+    @apply flex flex-wrap items-center justify-between gap-4 rounded-[22px] border border-[#E3EAF5] bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)];
+  }
+
+  .workspace-card {
+    @apply rounded-[24px] border border-[#D7E1F0] bg-white p-6 shadow-sm;
+  }
+
+  .workspace-panel {
+    @apply rounded-[24px] border border-[#D7E1F0] bg-white shadow-sm;
   }
 
   .metrics-number {
@@ -194,6 +231,39 @@ body {
   color: #0f172a;
 }
 
+/*
+ * Perkecil seluruh UI tanpa menyentuh zoom browser.
+ * zoom (bukan transform) dipakai supaya position:fixed — sidebar, overlay
+ * modal, dan toast — tetap melekat ke viewport saat halaman di-scroll.
+ */
 #root {
+  zoom: var(--ui-scale);
+  width: 100%;
   min-height: 100%;
 }
+
+/* Kompensasi unit viewport agar tetap pas setelah diskalakan. */
+#root .min-h-screen,
+#root .lg\:min-h-screen {
+  min-height: calc(100vh / var(--ui-scale));
+}
+
+#root .h-screen,
+#root .lg\:h-screen {
+  height: calc(100vh / var(--ui-scale));
+}
+
+#root .max-h-screen {
+  max-height: calc(100vh / var(--ui-scale));
+}
+
+#root .min-h-dvh {
+  min-height: calc(100dvh / var(--ui-scale));
+}
+
+#root .h-dvh {
+  height: calc(100dvh / var(--ui-scale));
+}
+
+/* Catatan: elemen position:fixed tidak ikut tersusut oleh zoom ancestor,
+   jadi tidak perlu dikompensasi — biarkan memakai 100% viewport apa adanya. */

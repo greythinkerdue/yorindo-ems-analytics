@@ -39,15 +39,15 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <div className="flex-[0.4]" />
 
         {/* Hero text */}
-        <div className="relative z-10 space-y-5">
-          <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-amber-400">
+        <div className="relative z-10 space-y-6">
+          <p className="text-[12px] font-bold uppercase tracking-[0.35em] text-amber-400">
             ANALYTICS DASHBOARD
           </p>
-          <h1 className="text-[3.25rem] font-black leading-[1.1] tracking-tight text-white">
+          <h1 className="text-[4rem] font-black leading-[1.08] tracking-tight text-white">
             Event<br />Management<br />
             <span className="text-amber-400">System.</span>
           </h1>
-          <p className="text-[14px] text-slate-500 leading-relaxed max-w-[300px]">
+          <p className="text-[17px] text-slate-500 leading-relaxed max-w-[360px]">
             The insight workspace for survey responses,
             feedback, and form-based event data.
           </p>

@@ -63,11 +63,12 @@ const normalizeLocation = (
 }
 
 const normalizeDate = (item: EventApiItem) =>
+  item.eventDate ||
   item.event_date ||
   item.date ||
   item.start_at ||
   item.starts_at ||
-  new Date().toISOString()
+  ""
 
 const mapEvent = (item: EventApiItem): Event => ({
   event_id: item._id,
@@ -92,8 +93,8 @@ const mapEvent = (item: EventApiItem): Event => ({
     item.approvedCount ??
     0,
   checked_in_count: item.checkedInCount ?? 0,
-  created_at: item.created_at ?? item.createdAt ?? new Date().toISOString(),
-  updated_at: item.updated_at ?? item.updatedAt ?? new Date().toISOString(),
+  created_at: item.created_at ?? item.createdAt ?? "",
+  updated_at: item.updated_at ?? item.updatedAt ?? "",
 })
 
 type EventPagination = {

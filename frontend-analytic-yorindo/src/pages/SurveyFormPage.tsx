@@ -1,26 +1,63 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, GripVertical, Plus, Star, Trash2 } from "lucide-react"
+import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react"
 import MainLayout from "@/components/Layout/MainLayout"
 import Button from "@/components/Button"
-import { addSurveyForm } from "@/store/surveyFormSlice"
+import { api } from "@/services/api"
+import { upsertForm } from "@/store/surveyFormSlice"
 import type { RootState } from "@/store/store"
-import type { SurveyQuestion } from "@/types/survey-form"
+import type { SurveyForm, SurveyQuestion } from "@/types/survey-form"
+import { getPublicSiteUrl } from "@/utils/publicSiteUrl"
 
 interface NewQuestion {
   question: string
-  type: "rating" | "text" | "textarea" | "select" | "radio"
+  type: SurveyQuestion["type"]
   required: boolean
   options?: string[]
 }
 
-const defaultQuestions: NewQuestion[] = [
-  { question: "Overall Rating", type: "rating", required: true },
-  { question: "Material Quality", type: "rating", required: true },
-  { question: "Speaker Performance", type: "rating", required: true },
-  { question: "Facility Rating", type: "rating", required: true },
-]
+interface BackendSurveyQuestion {
+  questionId: string
+  question: string
+  type: string
+  required: boolean
+  order: number
+  options?: Array<{ value: string; label: string }>
+}
+
+interface BackendSurvey {
+  id: string
+  eventId: string
+  title: string
+  description?: string | null
+  questions: BackendSurveyQuestion[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+const surveyLinkFor = (eventId: string) =>
+  `${getPublicSiteUrl().replace(/\/+$/, "")}/feedback/${encodeURIComponent(eventId)}`
+
+const mapBackendSurvey = (data: BackendSurvey): SurveyForm => ({
+  form_id: data.id,
+  event_id: data.eventId,
+  title: data.title,
+  description: data.description ?? undefined,
+  questions: (data.questions ?? []).map((question) => ({
+    id: question.questionId,
+    question: question.question,
+    type: question.type as SurveyQuestion["type"],
+    required: Boolean(question.required),
+    order: question.order,
+    options: (question.options ?? []).map((option) => option.value),
+  })),
+  link_survey: surveyLinkFor(data.eventId),
+  qr_code: "",
+  is_active: true,
+  created_at: data.createdAt ?? new Date().toISOString(),
+  updated_at: data.updatedAt ?? new Date().toISOString(),
+})
 
 const SurveyFormPage = () => {
   const { eventId } = useParams<{ eventId: string }>()
@@ -37,47 +74,77 @@ const SurveyFormPage = () => {
     required: true,
   })
   const [showAddQuestion, setShowAddQuestion] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState("")
 
   const event = events.find((item) => item.event_id === eventId)
   const existingForm = forms.find((item) => item.event_id === eventId)
 
+  useEffect(() => {
+    if (!eventId) return
+
+    let cancelled = false
+    setIsLoading(true)
+
+    api
+      .get<BackendSurvey>(`/api/v1/surveys/event/${eventId}`)
+      .then((result) => {
+        if (cancelled || !result.data) return
+        dispatch(upsertForm(mapBackendSurvey(result.data)))
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [dispatch, eventId])
+
   const handleAddQuestion = () => {
-    if (!newQuestion.question) return
+    if (!newQuestion.question.trim()) return
     setQuestions((current) => [...current, newQuestion])
     setNewQuestion({ question: "", type: "text", required: true })
     setShowAddQuestion(false)
   }
 
-  const handleSaveForm = () => {
+  const handleSaveForm = async () => {
     if (!eventId || !event) return
+    if (questions.length === 0) {
+      setSaveError("Tambahkan minimal satu pertanyaan survey.")
+      return
+    }
 
-    const allQuestions: SurveyQuestion[] = [
-      ...defaultQuestions.map((question, index) => ({
-        id: `default-${index}`,
-        question: question.question,
+    setIsSaving(true)
+    setSaveError("")
+
+    const payload = {
+      eventId,
+      title: formTitle.trim() || `Survey Feedback - ${event.title}`,
+      description: formDescription.trim() || null,
+      isPublished: true,
+      questions: questions.map((question, index) => ({
+        question: question.question.trim(),
         type: question.type,
         required: question.required,
+        options:
+          question.type === "select" || question.type === "radio"
+            ? question.options ?? []
+            : undefined,
         order: index + 1,
       })),
-      ...questions.map((question, index) => ({
-        id: `custom-${Date.now()}-${index}`,
-        question: question.question,
-        type: question.type,
-        required: question.required,
-        options: question.options,
-        order: defaultQuestions.length + index + 1,
-      })),
-    ]
+    }
 
-    dispatch(
-      addSurveyForm({
-        event_id: eventId,
-        title: formTitle || `Survey Feedback - ${event.title}`,
-        description: formDescription,
-        questions: allQuestions,
-      })
-    )
+    const result = await api.post<BackendSurvey>("/api/v1/surveys", payload)
+    setIsSaving(false)
 
+    if (result.error || !result.data) {
+      setSaveError(result.message || "Gagal menyimpan survey.")
+      return
+    }
+
+    dispatch(upsertForm(mapBackendSurvey(result.data)))
     navigate(`/events/${eventId}/analytics`)
   }
 
@@ -106,11 +173,15 @@ const SurveyFormPage = () => {
       }
     >
       <div className="mx-auto max-w-5xl">
-        {existingForm ? (
+        {isLoading ? (
+          <div className="card py-16 text-center text-neutral-500">Memuat survey dari database...</div>
+        ) : null}
+
+        {!isLoading && existingForm ? (
           <div className="card space-y-4">
             <div>
               <h2 className="text-lg font-semibold">{existingForm.title}</h2>
-              <p className="mt-1 text-sm text-success">Survey form sudah tersedia.</p>
+              <p className="mt-1 text-sm text-success">Survey form tersimpan di database.</p>
             </div>
             <div className="space-y-2">
               {existingForm.questions.map((question) => (
@@ -127,7 +198,9 @@ const SurveyFormPage = () => {
               ))}
             </div>
           </div>
-        ) : (
+        ) : null}
+
+        {!isLoading && !existingForm ? (
           <div className="card space-y-6">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-neutral-700">Form Title</label>
@@ -150,26 +223,11 @@ const SurveyFormPage = () => {
             </div>
 
             <div>
-              <h3 className="text-base font-semibold text-neutral-900">Default Rating Questions</h3>
-              <div className="mt-3 space-y-2">
-                {defaultQuestions.map((question) => (
-                  <div key={question.question} className="flex items-center gap-3 rounded-card bg-neutral-50 p-3">
-                    <Star size={16} className="text-secondary" fill="#F59E0B" />
-                    <div className="flex-1">
-                      <p className="font-medium">{question.question}</p>
-                      <p className="text-xs text-neutral-500">Rating 1-5 • Required</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-semibold text-neutral-900">Additional Questions</h3>
+                  <h3 className="text-base font-semibold text-neutral-900">Pertanyaan Survey</h3>
                   <p className="mt-1 text-sm text-neutral-500">
-                    Tambahkan komentar, saran, atau pertanyaan segmentasi.
+                    Tambahkan pertanyaan sesuai kebutuhan event ini.
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setShowAddQuestion(true)}>
@@ -203,7 +261,11 @@ const SurveyFormPage = () => {
                     </div>
                   ))}
                 </div>
-              ) : null}
+              ) : (
+                <p className="rounded-card border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500">
+                  Belum ada pertanyaan. Tambahkan pertanyaan pertama di sini.
+                </p>
+              )}
 
               {showAddQuestion ? (
                 <div className="space-y-3 rounded-card border border-neutral-200 p-4">
@@ -273,14 +335,18 @@ const SurveyFormPage = () => {
               ) : null}
             </div>
 
+            {saveError ? <p className="text-sm text-danger">{saveError}</p> : null}
+
             <div className="flex gap-3 border-t border-neutral-100 pt-4">
-              <Button onClick={handleSaveForm}>Save Survey Form</Button>
+              <Button onClick={handleSaveForm} disabled={isSaving}>
+                {isSaving ? "Menyimpan..." : "Save Survey Form"}
+              </Button>
               <Button variant="outline" onClick={() => navigate("/events")}>
                 Cancel
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </MainLayout>
   )

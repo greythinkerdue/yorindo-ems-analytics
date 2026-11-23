@@ -4,6 +4,7 @@ export interface FixField {
   type: "text" | "email" | "tel"
   required: boolean
   order: number
+  options?: string[]
 }
 
 export interface CustomField {
@@ -46,4 +47,7 @@ export interface RegistrationForm {
 export interface CreateRegistrationFormDTO {
   title: string
   custom_fields: Omit<CustomField, "id">[]
+  fix_fields?: FixField[]
+  link_pendaftaran?: string
+  qr_code?: string
 }

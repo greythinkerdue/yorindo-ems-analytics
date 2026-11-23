@@ -21,7 +21,6 @@ import { addForm, updateForm } from "@/store/registrationFormSlice"
 import { api } from "@/services/api"
 import type { RootState } from "@/store/store"
 import type { CustomField, FixField, RegistrationForm } from "@/types/registration-form"
-import { defaultFixFields } from "@/utils/mockData"
 import { buildPublicRegistrationUrl } from "@/utils/publicSiteUrl"
 
 type DraftField = {
@@ -49,20 +48,6 @@ const typeOptions: Array<{ value: CustomField["type"]; label: string }> = [
   { value: "radio", label: "Radiobutton" },
   { value: "checkbox", label: "Checkbox" },
 ]
-
-const industryOptions = [
-  "Otomotif & Suku Cadang (Auto Parts)",
-  "Elektronik & Peralatan Rumah Tangga",
-  "Fast-Moving Consumer Goods (FMCG)",
-  "Makanan & Minuman (F&B)",
-  "Farmasi & Alat Kesehatan",
-  "Plastik & Kemasan (Packaging)",
-  "Fabrikasi Logam & Mesin Presisi",
-  "Bahan Kimia Industri",
-  "Alat Berat & Karoseri",
-  "Tekstil & Garmen",
-  "Other",
-] as const
 
 const typeLabels: Record<CustomField["type"], string> = {
   text: "Short text field",
@@ -105,6 +90,16 @@ type BackendField = {
   condition?: DraftField["condition"]
   validation?: { required?: boolean }
   options?: Array<string | { value?: string; label?: string }>
+}
+
+const normalizeFieldOptions = (field: BackendField): string[] | undefined => {
+  const values = (field.options ?? [])
+    .map((option) => {
+      if (typeof option === "string") return option.trim()
+      return String(option.value ?? option.label ?? "").trim()
+    })
+    .filter(Boolean)
+  return values.length ? values : undefined
 }
 
 const toDraftField = (field: BackendField, index = 0): DraftField => {
@@ -176,8 +171,7 @@ const RegistrationFormPage = () => {
   const [formTitle, setFormTitle] = useState("")
   const [customFields, setCustomFields] = useState<DraftField[]>([])
   const [fieldDraft, setFieldDraft] = useState<DraftField>(emptyDraft())
-  const [selectedIndustry, setSelectedIndustry] = useState<(typeof industryOptions)[number]>("Elektronik & Peralatan Rumah Tangga")
-  const [otherIndustry, setOtherIndustry] = useState("")
+  const [fixedOptionValues, setFixedOptionValues] = useState<Record<string, string>>({})
   const [showFieldEditor, setShowFieldEditor] = useState(false)
   const [previewField, setPreviewField] = useState<DraftField | null>(null)
   const [editorState, setEditorState] = useState<EditorState>({ mode: "create", localId: null })
@@ -194,7 +188,7 @@ const RegistrationFormPage = () => {
   const existingForm = forms.find((item) => item.event_id === effectiveEventId)
   const persistedForm = existingForm ?? remoteForm
   const displayEventTitle = event?.title || (effectiveEventId ? `Event ${effectiveEventId}` : "Event Manual")
-  const activeFixFields = remoteFixFields ?? defaultFixFields
+  const activeFixFields = remoteFixFields ?? []
   const shownFields = customFields
   const currentFormTitle = formTitle || `Registration Form - ${displayEventTitle}`
 
@@ -422,6 +416,7 @@ const RegistrationFormPage = () => {
           type: mapFixedFieldType(field.type),
           required: Boolean(field.required ?? field.validation?.required),
           order: field.order ?? index + 1,
+          options: normalizeFieldOptions(field),
         }))
 
       const customFields = customSource
@@ -458,7 +453,7 @@ const RegistrationFormPage = () => {
         form_id: formId,
         event_id: effectiveEventId,
         title: payload.formName ?? `Registration Form - ${displayEventTitle}`,
-        fix_fields: fixedFields.length ? fixedFields : defaultFixFields,
+        fix_fields: fixedFields.length ? fixedFields : [],
         custom_fields: customFields,
         link_pendaftaran:
           payload.link_pendaftaran ??
@@ -578,6 +573,7 @@ const RegistrationFormPage = () => {
         order: field.order ?? index + 1,
         isFixed: true,
         isActive: true,
+        ...(field.options?.length ? { options: field.options } : {}),
         validation: {
           required: Boolean(field.required),
         },
@@ -640,6 +636,7 @@ const RegistrationFormPage = () => {
             type: mapFixedFieldType(field.type),
             required: Boolean(field.required ?? field.validation?.required),
             order: field.order ?? index + 1,
+            options: normalizeFieldOptions(field),
           }))
         : activeFixFields
 
@@ -689,6 +686,9 @@ const RegistrationFormPage = () => {
           event_id: effectiveEventId,
           data: {
             title: syncedForm.title,
+            fix_fields: syncedForm.fix_fields,
+            link_pendaftaran: syncedForm.link_pendaftaran,
+            qr_code: syncedForm.qr_code,
             custom_fields: syncedForm.custom_fields.map((field, index) => ({
               label: field.label,
               type: field.type,
@@ -820,32 +820,25 @@ const RegistrationFormPage = () => {
                       <p className="text-sm font-bold uppercase tracking-[0.08em] text-neutral-700">
                         {field.label.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())}
                       </p>
-                      {field.name === "jenis_industri" ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between rounded-[16px] border border-[#DCE5F2] bg-white px-5 py-4 text-sm text-neutral-700 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
-                            <select
-                              value={selectedIndustry}
-                              onChange={(event) =>
-                                setSelectedIndustry(event.target.value as (typeof industryOptions)[number])
-                              }
-                              className="w-full bg-transparent outline-none"
-                            >
-                              {industryOptions.map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronsUpDown size={18} className="shrink-0 text-neutral-400" />
-                          </div>
-                          {selectedIndustry === "Other" ? (
-                            <input
-                              value={otherIndustry}
-                              onChange={(event) => setOtherIndustry(event.target.value)}
-                              placeholder="Isi jenis perusahaan lainnya"
-                              className="w-full rounded-[16px] border border-[#DCE5F2] bg-white px-5 py-4 text-[1rem] text-neutral-700 outline-none shadow-[0_2px_8px_rgba(15,23,42,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/15"
-                            />
-                          ) : null}
+                      {field.options?.length ? (
+                        <div className="flex items-center justify-between rounded-[16px] border border-[#DCE5F2] bg-white px-5 py-4 text-sm text-neutral-700 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+                          <select
+                            value={fixedOptionValues[field.name] ?? field.options[0]}
+                            onChange={(event) =>
+                              setFixedOptionValues((current) => ({
+                                ...current,
+                                [field.name]: event.target.value,
+                              }))
+                            }
+                            className="w-full bg-transparent outline-none"
+                          >
+                            {field.options.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronsUpDown size={18} className="shrink-0 text-neutral-400" />
                         </div>
                       ) : (
                         <div className="flex items-center rounded-[16px] border border-[#DCE5F2] bg-white px-6 py-5 text-[1.05rem] text-neutral-400 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">

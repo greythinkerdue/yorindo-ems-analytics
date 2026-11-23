@@ -46,6 +46,19 @@ export type EventWithCounts = IEvent & {
   totalCount: number;
 };
 
+/** User ringkas yang dipakai untuk jejak audit pada detail event. */
+export type EventActor = {
+  _id: unknown;
+  name?: string;
+};
+
+/** Detail event dengan data pembuat/editor yang sudah di-populate. */
+export type EventDetailDocument = Omit<IEvent, "createdBy" | "updatedBy"> & {
+  _id: unknown;
+  createdBy?: EventActor | null;
+  updatedBy?: EventActor | null;
+};
+
 /**
  * Stats returned by getEventStats for the dashboard header cards.
  */
@@ -80,9 +93,12 @@ export interface EventStats {
  */
 export async function getEventById(
   id: string,
-): Promise<(IEvent & { _id: unknown }) | null> {
-  const doc = await Event.findById(id).lean<IEvent & { _id: unknown }>();
-  return doc;
+): Promise<EventDetailDocument | null> {
+  const doc = await Event.findById(id)
+    .populate("createdBy", "name")
+    .populate("updatedBy", "name")
+    .lean<any>();
+  return doc as EventDetailDocument | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -68,6 +68,7 @@ The frontend for the **Exhibition / Event Management System (EMS)**: a comprehen
 * **`VITE_PUBLIC_SITE_URL`**: Public origin used to build registration links and QR codes (e.g. `https://abcxyz.ngrok-free.dev`). If empty, `window.location.origin` is used — which becomes `localhost` when you open the dashboard locally.
 * **`VITE_API_BASE_URL`**: Base URL used by `src/services/api.ts`. Leave empty to use relative `/api/...` paths through the Vite proxy (required for ngrok).
 * **`VITE_API_URL`** (Optional): Base URL used by the public registration page. Leave empty to use the relative path `/api/v1/form-builder/slug`.
+* **`VITE_ADMIN_EMAIL`** (Optional): Email tujuan tautan **Contact admin** di halaman login. Jika alamatnya `gmail.com`/`googlemail.com`, tautan membuka Gmail compose di tab baru dengan subject `Permintaan akun EMS` dan body yang sudah terisi (pengguna tinggal menambahkan nama/email). Untuk domain lain, tautan memakai `mailto:` dengan subject dan body yang sama. Jika kosong, tautan disembunyikan dan hanya teks "Hubungi admin panitia Anda" yang tampil.
 
 > **Dev Proxy Note**: `vite.config.ts` proxies paths starting with `/api` to `http://localhost:5000` to handle relative requests during development.
 

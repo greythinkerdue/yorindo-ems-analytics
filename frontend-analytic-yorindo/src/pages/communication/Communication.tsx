@@ -1415,18 +1415,18 @@ export function Communication() {
 
   if (isReviewingSend) {
     return (
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="workspace-shell">
         {feedbackToast}
         <div className="space-y-8">
-          <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="workspace-header">
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+              <p className="workspace-eyebrow">
                 Communication Review
               </p>
-              <h1 className="text-pretty text-3xl font-bold text-[#1d376b]">
+              <h1 className="workspace-title">
                 Review Template & Queue Broadcast
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-500">
+              <p className="workspace-subtitle">
                 Review the email template, inbox preview, and final confirmation
                 on a dedicated screen so admins can verify exactly what will be
                 sent.
@@ -1460,9 +1460,9 @@ export function Communication() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
-            <section className="space-y-5 rounded-[28px] border  border-slate-300 bg-slate-50/80 p-5 sm:p-6">
+            <section className="workspace-card space-y-5">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-4">
+                <div className="rounded-2xl border  border-[#D7E1F0] bg-white px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Final Audience
                   </p>
@@ -1474,7 +1474,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-4">
+                <div className="rounded-2xl border  border-[#D7E1F0] bg-white px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Risk Check
                   </p>
@@ -1489,7 +1489,7 @@ export function Communication() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border  border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border  border-[#D7E1F0] bg-white p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Current Event
                 </p>
@@ -1503,7 +1503,7 @@ export function Communication() {
                 </p>
               </div>
 
-              <div className="rounded-[24px] border  border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border  border-[#D7E1F0] bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1532,7 +1532,7 @@ export function Communication() {
                     selectedRecipientPreview.map((recipient) => (
                       <div
                         key={recipient.registrationId}
-                        className="rounded-2xl border  border-slate-300 bg-slate-50 px-3 py-2"
+                        className="rounded-2xl border  border-[#D7E1F0] bg-slate-50 px-3 py-2"
                       >
                         <p className="truncate text-sm font-semibold text-slate-800">
                           {recipient.fullName}
@@ -1558,7 +1558,7 @@ export function Communication() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border  border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border  border-[#D7E1F0] bg-white p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Active Filters
                 </p>
@@ -1581,7 +1581,7 @@ export function Communication() {
               </div>
             </section>
 
-            <section className="space-y-5 rounded-[28px] border  border-slate-300 bg-white p-5 sm:p-6">
+            <section className="workspace-card space-y-5">
               <div className="space-y-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Final Preview
@@ -1608,7 +1608,7 @@ export function Communication() {
                       className={`rounded-2xl border p-4 text-left transition ${
                         isActive
                           ? "border-amber-400 bg-amber-50/40 shadow-sm"
-                          : " border-slate-300 bg-slate-50 hover:border-slate-400"
+                          : " border-[#D7E1F0] bg-slate-50 hover:border-slate-400"
                       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300`}
                     >
                       <div
@@ -1626,7 +1626,7 @@ export function Communication() {
               </div> */}
 
               <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     From
                   </p>
@@ -1638,7 +1638,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     To
                   </p>
@@ -1651,7 +1651,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border  border-[#D7E1F0] bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Subject
                   </p>
@@ -1660,7 +1660,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border  border-[#D7E1F0] bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Preheader
                   </p>
@@ -1687,7 +1687,7 @@ export function Communication() {
                 </TabsList>
 
                 <TabsContent value="visual">
-                  <div className="overflow-hidden rounded-[24px] border border-slate-300 bg-slate-100">
+                  <div className="overflow-hidden rounded-[24px] border border-[#D7E1F0] bg-slate-100">
                     {isPreviewLoading ? (
                       <div className="flex min-h-[40rem] items-center justify-center gap-3 text-sm text-slate-500">
                         <LoaderCircle
@@ -1713,7 +1713,7 @@ export function Communication() {
                 </TabsContent>
               </Tabs>
 
-              <div className="flex flex-col gap-3 border-t  border-slate-300 pt-5 sm:flex-row sm:justify-between">
+              <div className="flex flex-col gap-3 border-t  border-[#D7E1F0] pt-5 sm:flex-row sm:justify-between">
                 <div className="space-y-1 text-xs leading-5 text-slate-500">
                   <p>
                     Save Draft stores the current audience, subject, and message
@@ -1764,7 +1764,7 @@ export function Communication() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="workspace-shell">
       {feedbackToast}
       <title>Yorindo EMS - Communication Hub</title>
       {showRestorePrompt && (
@@ -1805,12 +1805,13 @@ export function Communication() {
       )}
 
       <div className="space-y-8">
-        <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="workspace-header">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
+            <p className="workspace-eyebrow">Communication Workspace</p>
+            <h1 className="workspace-title">
               Communication Hub
             </h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="workspace-subtitle">
               Build the audience on the left, compose the email on the right,
               then review everything once before sending.
             </p>
@@ -1834,8 +1835,8 @@ export function Communication() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(320px,360px)_minmax(0,1fr)] lg:items-start">
-          <section className="self-start rounded-[28px] border border-slate-300 bg-sidebar p-5 sm:p-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(320px,360px)_minmax(0,1fr)] lg:items-stretch">
+          <section className="workspace-card h-full">
             <div className="space-y-1">
               <p className="text-sm font-bold text-[#1d376b]">
                 Audience Builder
@@ -1848,7 +1849,7 @@ export function Communication() {
 
             <div className="mt-5 space-y-5">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-300 bg-white px-4 py-3">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-white px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Visible Now
                   </p>
@@ -1859,7 +1860,7 @@ export function Communication() {
                     Recipients match the current audience filters.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-300 bg-white px-4 py-3">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-white px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Selected
                   </p>
@@ -1924,7 +1925,7 @@ export function Communication() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={eventComboOpen}
-                          className="w-full h-[45px] justify-between font-normal bg-white border border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                          className="w-full h-[45px] justify-between font-normal bg-white border border-[#D7E1F0] rounded-xl focus:ring-1 focus:ring-indigo-400"
                         >
                           <span className="truncate">
                             {filters.eventId
@@ -1998,7 +1999,7 @@ export function Communication() {
                             className={`rounded-xl border px-3 py-2 text-left text-sm transition ${
                               isActive
                                 ? "border-[#1d376b] bg-[#1d376b] text-white"
-                                : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                                : "border-[#D7E1F0] bg-white text-slate-600 hover:border-slate-400"
                             } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d376b]/20`}
                           >
                             <p className="font-semibold">{status.label}</p>
@@ -2038,7 +2039,7 @@ export function Communication() {
                     >
                       <SelectTrigger
                         id="communication-participant-type"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                        className="h-11 py-5.5 w-full bg-white border-[#D7E1F0] rounded-xl focus:ring-1 focus:ring-indigo-400"
                       >
                         <SelectValue placeholder="Participant Type" />
                       </SelectTrigger>
@@ -2068,7 +2069,7 @@ export function Communication() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={companyComboOpen}
-                          className="w-full h-[45px] rounded-xl justify-between font-normal bg-white border border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                          className="w-full h-[45px] rounded-xl justify-between font-normal bg-white border border-[#D7E1F0] rounded-xl focus:ring-1 focus:ring-indigo-400"
                         >
                           <span className="truncate">
                             {filters.companyId
@@ -2134,7 +2135,7 @@ export function Communication() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={industryComboOpen}
-                          className="w-full justify-between font-normal h-[45px] bg-white border border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                          className="w-full justify-between font-normal h-[45px] bg-white border border-[#D7E1F0] rounded-xl focus:ring-1 focus:ring-indigo-400"
                         >
                           <span className="truncate">
                             {filters.industryId
@@ -2199,7 +2200,7 @@ export function Communication() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={jobTitleComboOpen}
-                          className="w-full justify-between font-normal h-[45px] bg-white rounded-xl border border-slate-300 focus:ring-1 focus:ring-indigo-400"
+                          className="w-full justify-between font-normal h-[45px] bg-white rounded-xl border border-[#D7E1F0] focus:ring-1 focus:ring-indigo-400"
                         >
                           <span className="truncate">
                             {filters.jobTitleId
@@ -2264,7 +2265,7 @@ export function Communication() {
                           variant="ghost"
                           role="combobox"
                           aria-expanded={cityComboOpen}
-                          className="w-full justify-between font-normal h-[45px] bg-white border border-slate-300 focus:ring-1 focus:ring-indigo-400 rounded-xl"
+                          className="w-full justify-between font-normal h-[45px] bg-white border border-[#D7E1F0] focus:ring-1 focus:ring-indigo-400 rounded-xl"
                         >
                           <span className="truncate">
                             {filters.cityId
@@ -2329,7 +2330,7 @@ export function Communication() {
                     >
                       <SelectTrigger
                         id="communication-source-channel"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                        className="h-11 py-5.5 w-full bg-white border-[#D7E1F0] rounded-xl focus:ring-1 focus:ring-indigo-400"
                       >
                         <SelectValue placeholder="All source channels" />
                       </SelectTrigger>
@@ -2373,7 +2374,7 @@ export function Communication() {
                           setSearchInput(event.target.value);
                           if (feedback) setFeedback(null);
                         }}
-                        className="h-11 bg-white pl-10 pr-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                        className="h-11 bg-white pl-10 pr-10 border-[#D7E1F0] rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                       />
                       {searchInput.trim() ? (
                         <Button
@@ -2394,7 +2395,7 @@ export function Communication() {
                       <p className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                         Visible Audience
                         {showFilteringIndicator ? (
-                          <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                          <span className="inline-flex items-center rounded-full border border-[#D7E1F0] bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                             Filtering…
                           </span>
                         ) : null}
@@ -2426,10 +2427,10 @@ export function Communication() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 rounded-[24px] border  border-slate-300 bg-white/60 p-3">
+                  <div className="space-y-3 rounded-[24px] border  border-[#D7E1F0] bg-white/60 p-3">
                     <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1 [contain-intrinsic-size:640px] [content-visibility:auto]">
                       {isLoading ? (
-                        <div className="rounded-2xl border border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
+                        <div className="rounded-2xl border border-[#D7E1F0] bg-white px-4 py-10 text-center text-sm text-slate-400">
                           Loading audience…
                         </div>
                       ) : loadError ? (
@@ -2448,7 +2449,7 @@ export function Communication() {
                           return (
                             <label
                               key={recipient.registrationId}
-                              className="flex cursor-pointer items-start gap-3 rounded-2xl border  border-slate-300 bg-white px-3 py-3 transition hover:border-slate-400 has-[:focus-visible]:border-[#1d376b] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1d376b]/10"
+                              className="flex cursor-pointer items-start gap-3 rounded-2xl border  border-[#D7E1F0] bg-white px-3 py-3 transition hover:border-slate-400 has-[:focus-visible]:border-[#1d376b] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1d376b]/10"
                             >
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-200 font-bold text-slate-700">
                                 {getInitials(recipient.fullName)}
@@ -2471,7 +2472,7 @@ export function Communication() {
                                         recipient.registrationId,
                                       )
                                     }
-                                    className="mt-1 h-4 w-4 rounded border-slate-300 text-[#1d376b] focus-visible:ring-2 focus-visible:ring-[#1d376b]/30"
+                                    className="mt-1 h-4 w-4 rounded border-[#D7E1F0] text-[#1d376b] focus-visible:ring-2 focus-visible:ring-[#1d376b]/30"
                                   />
                                 </div>
                                 <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
@@ -2488,13 +2489,13 @@ export function Communication() {
                           );
                         })
                       ) : (
-                        <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
+                        <div className="rounded-2xl border  border-[#D7E1F0] bg-white px-4 py-10 text-center text-sm text-slate-400">
                           No recipients match the current filters.
                         </div>
                       )}
                     </div>
                     {hasMoreRecipients ? (
-                      <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+                      <div className="flex items-center justify-between border-t border-[#E3EAF5] pt-2">
                         <p className="text-xs text-slate-500">
                           Showing {renderedRecipients.length} of{" "}
                           {visibleRecipients.length} recipients.
@@ -2518,7 +2519,7 @@ export function Communication() {
                 </TabsContent>
 
                 <TabsContent value="review" className="space-y-4">
-                  <div className="rounded-[24px] border border-slate-300 bg-white p-4">
+                  <div className="rounded-[24px] border border-[#D7E1F0] bg-white p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                       Current Event
                     </p>
@@ -2532,7 +2533,7 @@ export function Communication() {
                     </p>
                   </div>
 
-                  <div className="rounded-[24px] border border-slate-300 bg-white p-4">
+                  <div className="rounded-[24px] border border-[#D7E1F0] bg-white p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                       Active Filters
                     </p>
@@ -2554,7 +2555,7 @@ export function Communication() {
                     </div>
                   </div>
 
-                  <div className="rounded-[24px] border border-slate-300 bg-white p-4">
+                  <div className="rounded-[24px] border border-[#D7E1F0] bg-white p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -2580,7 +2581,7 @@ export function Communication() {
                         selectedRecipientPreview.map((recipient) => (
                           <div
                             key={recipient.registrationId}
-                            className="rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2"
+                            className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-3 py-2"
                           >
                             <p className="truncate text-sm font-semibold text-slate-800">
                               {recipient.fullName}
@@ -2608,7 +2609,7 @@ export function Communication() {
                     </div>
                   </div>
 
-                  <div className="border-t border-slate-300 pt-4">
+                  <div className="border-t border-[#D7E1F0] pt-4">
                     <p className="text-sm font-semibold text-slate-700">
                       {visibleRecipients.length} visible recipients
                     </p>
@@ -2620,7 +2621,7 @@ export function Communication() {
                 </TabsContent>
               </Tabs>
 
-              <div className="rounded-[24px] border border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border border-[#D7E1F0] bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -2654,7 +2655,7 @@ export function Communication() {
 
                 <div className="mt-4 space-y-3">
                   {isDraftsLoading ? (
-                    <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-5 text-sm text-slate-500">
                       Loading saved drafts…
                     </div>
                   ) : drafts.length ? (
@@ -2667,7 +2668,7 @@ export function Communication() {
                           className={`rounded-2xl border px-4 py-4 ${
                             isCurrentDraft
                               ? "border-amber-300 bg-amber-50/50"
-                              : "border-slate-300 bg-slate-50/70"
+                              : "border-[#D7E1F0] bg-slate-50/70"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -2708,7 +2709,7 @@ export function Communication() {
                       );
                     })
                   ) : (
-                    <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-5 text-sm text-slate-500">
                       No saved drafts yet. Save the current composer once to
                       create your first reusable draft.
                     </div>
@@ -2718,8 +2719,8 @@ export function Communication() {
             </div>
           </section>
 
-          <section className="min-w-0 rounded-[28px] border border-slate-300 bg-white">
-            <div className="flex flex-col gap-4 border-b border-slate-300 px-5 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
+          <section className="workspace-panel flex h-full min-w-0 flex-col">
+            <div className="flex flex-col gap-4 border-b border-[#D7E1F0] px-5 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Compose
@@ -2735,7 +2736,7 @@ export function Communication() {
                     : "Save the current work as a draft any time before queueing the broadcast."}
                 </p>
               </div>
-              {/* <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              {/* <div className="inline-flex items-center gap-2 rounded-full border border-[#D7E1F0] bg-slate-50 px-3 py-2 text-sm text-slate-500">
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 <span className="tabular-nums">
                   {selectedRecipientCount} recipients selected
@@ -2745,7 +2746,7 @@ export function Communication() {
 
             <div className="flex flex-1 flex-col space-y-6 px-5 py-5 sm:px-6 sm:py-6">
               <div className="grid gap-3 xl:grid-cols-3">
-                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-4 xl:min-h-[118px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Event
                   </p>
@@ -2759,7 +2760,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-4 xl:min-h-[118px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Audience Snapshot
                   </p>
@@ -2772,7 +2773,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
+                <div className="rounded-2xl border border-[#D7E1F0] bg-slate-50 px-4 py-4 xl:min-h-[118px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Active Filters
                   </p>
@@ -2804,7 +2805,7 @@ export function Communication() {
                   className={`min-h-[76px] rounded-2xl border px-4 py-3 ${
                     composerErrors.recipients
                       ? "border-rose-300 bg-rose-50/60"
-                      : "border-slate-300 bg-slate-50"
+                      : "border-[#D7E1F0] bg-slate-50"
                   }`}
                 >
                   <div className="flex flex-wrap gap-2">
@@ -2916,7 +2917,7 @@ export function Communication() {
                     }));
                     setFeedback(null);
                   }}
-                  className="h-12 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                  className="h-12 bg-slate-50 border-[#E3EAF5] rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                 />
                 {composerErrors.subject ? (
                   <p className="text-sm text-rose-600">
@@ -2943,7 +2944,7 @@ export function Communication() {
                     setPreviewText(event.target.value);
                     setFeedback(null);
                   }}
-                  className="h-12  bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                  className="h-12  bg-slate-50 border-[#E3EAF5] rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                 />
               </div>
 
@@ -2980,7 +2981,7 @@ export function Communication() {
                 </div>
                 <div
                   id="communication-message-body-help"
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2"
+                  className="rounded-lg border border-[#E3EAF5] bg-slate-50 px-4 py-3 space-y-2"
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     Available Placeholders
@@ -3013,7 +3014,7 @@ export function Communication() {
                 ) : null}
               </div>
 
-              <div className="mt-auto flex flex-col gap-4 border-t  border-slate-300 pt-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="mt-auto flex flex-col gap-4 border-t  border-[#D7E1F0] pt-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-md space-y-1 text-xs leading-5 text-slate-500">
                   <p>
                     {hasUnsavedChanges

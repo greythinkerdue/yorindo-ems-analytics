@@ -6,6 +6,37 @@ import { OtpInput } from "@/components/auth/OtpInput";
 
 const EMPTY_OTP = ["", "", "", "", "", ""];
 
+const ADMIN_EMAIL =
+  (import.meta.env.VITE_ADMIN_EMAIL as string | undefined)?.trim() ?? "";
+
+const ADMIN_SUBJECT = "Permintaan akun EMS";
+
+const ADMIN_BODY = [
+  "Halo Admin,",
+  "",
+  "Saya ingin meminta akun EMS. Mohon bantuannya.",
+  "",
+  "Nama:",
+  "Email:",
+].join("\n");
+
+function buildAdminComposeUrl(email: string): string {
+  if (!email) return "";
+
+  const to = encodeURIComponent(email);
+  const su = encodeURIComponent(ADMIN_SUBJECT);
+  const body = encodeURIComponent(ADMIN_BODY);
+
+  const isGmail = /@(gmail|googlemail)\.com$/i.test(email);
+  if (isGmail) {
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`;
+  }
+
+  return `mailto:${email}?subject=${su}&body=${body}`;
+}
+
+const ADMIN_COMPOSE_URL = buildAdminComposeUrl(ADMIN_EMAIL);
+
 export function Login() {
   const navigate = useNavigate();
   const { requestOtp, verifyOtp } = useAuth();
@@ -259,9 +290,20 @@ export function Login() {
         {/* Footer */}
         <p className="text-center text-sm text-slate-500">
           Don&apos;t have an account?{" "}
-          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
-            Contact admin
-          </span>
+          {ADMIN_COMPOSE_URL ? (
+            <a
+              href={ADMIN_COMPOSE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 font-medium hover:underline"
+            >
+              Contact admin
+            </a>
+          ) : (
+            <span className="text-slate-400">
+              Hubungi admin panitia Anda
+            </span>
+          )}
         </p>
       </div>
     </AuthLayout>

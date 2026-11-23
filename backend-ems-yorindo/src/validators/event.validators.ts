@@ -34,7 +34,7 @@ const industrySnapshotSchema = z.object({
  *
  * All fields are optional with sensible defaults:
  *   page      → which page to return (default: 1)
- *   limit     → items per page, fixed at 5 per client requirement
+ *   limit     → items per page, maksimal 9 (client pakai 6 = 3 kolom x 2 baris)
  *   status    → filter by event lifecycle status
  *   category  → case-insensitive partial match on category
  *   sortBy    → which field to sort on (default: eventDate)
@@ -42,8 +42,8 @@ const industrySnapshotSchema = z.object({
  */
 export const getAllEventsQuerySchema = z.object({
   page:      z.coerce.number().int().min(1).default(1),
-  // Limit is capped at 5 — client confirmed 3-4 events per month maximum.
-  limit:     z.coerce.number().int().min(1).max(5).default(5),
+  // Client memakai 6 (3 kolom x 2 baris); batas atas 9 disiapkan untuk fleksibilitas.
+  limit:     z.coerce.number().int().min(1).max(9).default(6),
   status:    z.enum(STATUS.EVENT).optional(),
   category:  z.string().trim().min(1).optional(),
   search:    z.string().trim().min(1).optional(),

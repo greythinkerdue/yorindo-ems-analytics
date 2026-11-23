@@ -381,35 +381,29 @@ const SurveyAnalytics = () => {
           <div className="mt-5 space-y-4">
             <p className="text-sm leading-7 text-[#5B6B7F]">{insightContent.summary}</p>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-[18px] bg-[#F8FAFF] p-4">
-                <h3 className="text-sm font-semibold text-[#0A2647]">Key Findings</h3>
-                {insightContent.keyFindings.length > 0 ? (
-                  <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[#5B6B7F]">
-                    {insightContent.keyFindings.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-3 text-sm text-[#6B7280]">Belum ada temuan utama.</p>
-                )}
+            {insightContent.keyFindings.length > 0 ? (
+              <div className="space-y-3">
+                {insightContent.keyFindings.map((item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className="rounded-[18px] border border-[#E3EBF7] bg-[#F8FAFF] p-4"
+                  >
+                    <p className="text-sm leading-6 text-[#0A2647]">{item}</p>
+                    <div className="mt-3 border-t border-[#E3EBF7] pt-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7B8CA3]">
+                        Key action
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-[#5B6B7F]">
+                        {insightContent.exhibitorActions[index] ??
+                          "Belum ada aksi yang disarankan."}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              <div className="rounded-[18px] bg-[#F8FAFF] p-4">
-                <h3 className="text-sm font-semibold text-[#0A2647]">
-                  Recommended Actions
-                </h3>
-                {insightContent.exhibitorActions.length > 0 ? (
-                  <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[#5B6B7F]">
-                    {insightContent.exhibitorActions.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-3 text-sm text-[#6B7280]">Belum ada aksi yang disarankan.</p>
-                )}
-              </div>
-            </div>
+            ) : (
+              <p className="text-sm text-[#6B7280]">Belum ada temuan utama.</p>
+            )}
 
             <div className="rounded-[18px] bg-[#F8FAFF] p-4">
               <h3 className="text-sm font-semibold text-[#0A2647]">

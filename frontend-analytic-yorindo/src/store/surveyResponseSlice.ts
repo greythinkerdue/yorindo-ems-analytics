@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
 import type { SurveyResponse } from "@/types/survey-response"
-import { mockSurveyResponses } from "@/utils/mockData"
 
 interface SurveyResponseState {
   responses: SurveyResponse[]
@@ -9,7 +8,7 @@ interface SurveyResponseState {
 }
 
 const initialState: SurveyResponseState = {
-  responses: mockSurveyResponses,
+  responses: [],
   isLoading: false,
 }
 

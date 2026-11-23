@@ -110,7 +110,7 @@ const statusStyles: Record<string, string> = {
   sent: "bg-emerald-50 text-emerald-600 border-emerald-200",
   queued: "bg-blue-50 text-blue-600 border-blue-200",
   processing: "bg-yellow-50 text-yellow-600 border-yellow-200",
-  draft: "bg-slate-50 text-slate-400 border-slate-200",
+  draft: "bg-[#F8FAFD] text-[#94A3B8] border-[#E3EAF5]",
   failed: "bg-red-50 text-red-600 border-red-200",
 };
 
@@ -225,15 +225,14 @@ export function CampaignHistory() {
   const draftCount = history?.summary.statusCounts.draft ?? 0;
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="workspace-shell">
       <title>Yorindo EMS - Campaign History</title>
       <div className="space-y-8">
-        <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="workspace-header">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
-              Campaign History
-            </h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="workspace-eyebrow">Communication Workspace</p>
+            <h1 className="workspace-title">Campaign History</h1>
+            <p className="workspace-subtitle">
               Monitor drafts and delivery results after the broadcast is sent.
             </p>
           </div>
@@ -242,7 +241,7 @@ export function CampaignHistory() {
               type="button"
               size="lg"
               asChild
-              className="h-11 px-5 text-white border border-sm border-[#002d7a]"
+              className="flex items-center gap-2 rounded-[14px] bg-[#0A2647] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#133A6F] active:scale-95"
             >
               <Link to="/communication">
                 <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -253,19 +252,19 @@ export function CampaignHistory() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-slate-300 bg-slate-50 px-5 py-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+          <div className="workspace-card bg-[#F8FAFD]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#94A3B8]">
               Total
             </p>
             <p className="mt-2 text-3xl font-bold text-[#1d376b] tabular-nums">
               {totalCampaigns}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-[#5B6B7F]">
               Total campaigns in this view.
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-amber-300 bg-amber-50/70 px-5 py-4">
+          <div className="workspace-card border-amber-200 bg-amber-50/70">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
               Sending
             </p>
@@ -277,7 +276,7 @@ export function CampaignHistory() {
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-[#72a688]/50 bg-emerald-50/70 px-5 py-4">
+          <div className="workspace-card border-emerald-200 bg-emerald-50/70">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">
               Delivered
             </p>
@@ -289,7 +288,7 @@ export function CampaignHistory() {
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-rose-300 bg-rose-50/70 px-5 py-4">
+          <div className="workspace-card border-rose-200 bg-rose-50/70">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-rose-700">
               Failed / Draft
             </p>
@@ -302,8 +301,8 @@ export function CampaignHistory() {
           </div>
         </div>
 
-        <section className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
-          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+        <section className="workspace-card">
+          <div className="flex flex-col gap-4 border-b border-[#E3EAF5] pb-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((option) => {
                 const isActive = status === option.value;
@@ -317,15 +316,15 @@ export function CampaignHistory() {
                     key={option.value}
                     type="button"
                     onClick={() => setStatus(option.value)}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    className={`rounded-[14px] px-4 py-2 text-sm font-semibold transition ${
                       isActive
-                        ? "border-[#1d376b] bg-[#1d376b] text-white"
-                        : "border-slate-300 bg-slate-50 text-slate-600 hover:border-slate-400"
-                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d376b]/20`}
+                        ? "bg-[#0A2647] text-white shadow-[0_10px_18px_rgba(10,38,71,0.16)]"
+                        : "bg-[#EDF3FF] text-[#5B6B7F] hover:bg-[#DCE7FF] hover:text-[#0A2647]"
+                    }`}
                   >
                     {option.label}{" "}
                     <span
-                      className={isActive ? "text-slate-200" : "text-slate-400"}
+                      className={isActive ? "text-white/70" : "text-[#94A3B8]"}
                     >
                       ({count})
                     </span>
@@ -336,7 +335,7 @@ export function CampaignHistory() {
 
             <div className="relative w-full lg:max-w-sm">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]"
                 aria-hidden="true"
               />
               <Input
@@ -346,7 +345,7 @@ export function CampaignHistory() {
                 autoComplete="off"
                 placeholder="Search subject, event, creator…"
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="h-11 pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                className="h-11 pl-10 bg-background border-[#E3EAF5] rounded-[14px] focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
               />
             </div>
           </div>
@@ -367,10 +366,10 @@ export function CampaignHistory() {
             </div>
           ) : null}
 
-          <div className="mt-5 overflow-hidden rounded-[24px] border border-slate-300">
+          <div className="mt-5 overflow-hidden rounded-[24px] border border-[#D7E1F0]">
             <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow className="hover:bg-slate-50">
+              <TableHeader className="bg-[#F8FAFD]">
+                <TableRow className="hover:bg-[#F8FAFD]">
                   <TableHead className="px-4">Event</TableHead>
                   <TableHead className="px-4">Campaign</TableHead>
                   <TableHead className="px-4">Delivery</TableHead>
@@ -385,7 +384,7 @@ export function CampaignHistory() {
                 {isLoading ? (
                   <TableRow className="hover:bg-white ">
                     <TableCell colSpan={5} className="h-48 text-center ">
-                      <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
+                      <div className="flex items-center justify-center gap-3 text-sm text-[#5B6B7F]">
                         <LoaderCircle
                           className="h-4 w-4 animate-spin"
                           aria-hidden="true"
@@ -403,7 +402,7 @@ export function CampaignHistory() {
                           <p className="font-medium text-slate-700">
                             {item.event.title ?? "All events"}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[#5B6B7F]">
                             {formatEventDate(item.event.eventDate)}
                           </p>
                         </div>
@@ -415,11 +414,11 @@ export function CampaignHistory() {
                           <p className="font-semibold text-slate-800">
                             {item.subject || "Untitled campaign"}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[#5B6B7F]">
                             {item.templateName}
                             {item.previewText ? ` · ${item.previewText}` : ""}
                           </p>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-[#94A3B8]">
                             by {item.createdBy?.name ?? "Unknown user"}
                             {item.createdBy?.email
                               ? ` · ${item.createdBy.email}`
@@ -434,7 +433,7 @@ export function CampaignHistory() {
                           <p className="font-medium text-slate-700">
                             {getDeliveryLabel(item)}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[#5B6B7F]">
                             Sent: {formatDateTime(item.sentAt)}
                           </p>
                         </div>
@@ -452,7 +451,7 @@ export function CampaignHistory() {
                             />
                             {item.status.toUpperCase()}
                           </span>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[#5B6B7F]">
                             {item.recipientCount} recipient
                             {item.recipientCount !== 1 ? "s" : ""}
                           </p>
@@ -493,8 +492,8 @@ export function CampaignHistory() {
                 ) : (
                   <TableRow className="hover:bg-white">
                     <TableCell colSpan={5} className="h-48 text-center">
-                      <div className="space-y-3 text-sm text-slate-500">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                      <div className="space-y-3 text-sm text-[#5B6B7F]">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-dashed border-[#D7E1F0] bg-[#F8FAFD] px-3 py-2 text-xs font-semibold text-slate-600">
                           <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                           No campaign activity yet
                         </div>

@@ -22,10 +22,11 @@ type AnalyticsOverview = {
   month: string;
   summary: {
     eventId: string;
-    totalInvitations: number;
+    totalPending: number;
     totalRegistrations: number;
     totalApproved: number;
     totalAttendance: number;
+    totalRejected: number;
     attendanceRate: number;
   };
   statusBreakdown: {
@@ -282,27 +283,23 @@ const EventAnalytics = () => {
             <p className="text-sm leading-7 text-[#5B6B7F]">
               {insights.summary}
             </p>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-[18px] bg-[#F8FAFF] p-4">
-                <h3 className="text-sm font-semibold text-[#0A2647]">
-                  Highlights
-                </h3>
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[#5B6B7F]">
-                  {insights.highlights.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-[18px] bg-[#F8FAFF] p-4">
-                <h3 className="text-sm font-semibold text-[#0A2647]">
-                  Recommendations
-                </h3>
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[#5B6B7F]">
-                  {insights.recommendations.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+            <div className="space-y-3">
+              {insights.highlights.map((item, index) => (
+                <div
+                  key={`${item}-${index}`}
+                  className="rounded-[18px] border border-[#E3EBF7] bg-[#F8FAFF] p-4"
+                >
+                  <p className="text-sm leading-6 text-[#0A2647]">{item}</p>
+                  <div className="mt-3 border-t border-[#E3EBF7] pt-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7B8CA3]">
+                      Key action
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-[#5B6B7F]">
+                      {insights.recommendations[index]}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ) : (
@@ -334,10 +331,10 @@ const EventAnalytics = () => {
           <>
             <div className="rounded-[18px] border border-[#C9D7F3] bg-[#EAF1FF] p-5 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7B8CA3]">
-                Invitations
+                Pending Approval
               </p>
               <p className="mt-3 text-3xl font-bold text-[#0A2647]">
-                {formatNumber(overview.summary.totalInvitations)}
+                {formatNumber(overview.summary.totalPending)}
               </p>
             </div>
             <div className="rounded-[18px] border border-[#C9D7F3] bg-[#EAF1FF] p-5 shadow-[0_10px_22px_rgba(15,23,42,0.06)]">

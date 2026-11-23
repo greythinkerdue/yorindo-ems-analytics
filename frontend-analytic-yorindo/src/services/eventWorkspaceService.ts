@@ -23,10 +23,11 @@ export interface EventDetailResponse {
 
 export interface EventAnalyticsSummary {
   eventId: string;
-  totalInvitations: number;
+  totalPending: number;
   totalRegistrations: number;
   totalApproved: number;
   totalAttendance: number;
+  totalRejected: number;
   attendanceRate: number;
 }
 

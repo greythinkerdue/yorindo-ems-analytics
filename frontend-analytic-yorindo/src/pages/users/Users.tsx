@@ -119,16 +119,18 @@ export function Users() {
 
   return (
     <>
-      <div className="space-y-6">
-
+      <div className="workspace-shell">
         {/* Header */}
-        <div className="flex justify-between items-start pb-2 border-b border-dashed border-slate-200">
-          <div>
-            <h1 className="text-3xl font-bold">Users</h1>
-            <p className="text-gray-500">Manage who can access the EMS dashboard.</p>
+        <div className="workspace-header">
+          <div className="space-y-2">
+            <p className="workspace-eyebrow">Access Control</p>
+            <h1 className="workspace-title">Users</h1>
+            <p className="workspace-subtitle">
+              Manage who can access the EMS dashboard.
+            </p>
           </div>
           <Button
-            className="bg-[#1a40a8] hover:bg-blue-800"
+            className="flex items-center gap-2 rounded-[14px] bg-[#0A2647] px-6 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-[#133A6F] active:scale-95"
             onClick={handleOpenCreate}
           >
             + Invite User
@@ -136,7 +138,7 @@ export function Users() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-3">
+        <div className="workspace-toolbar">
           <div className="relative flex-1 max-w-sm">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -150,14 +152,14 @@ export function Users() {
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search name or email..."
-              className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
+              className="w-full rounded-[14px] border border-[#D7E1F0] bg-[#F8FAFD] py-2.5 pl-10 pr-4 text-sm text-[#43556E] outline-none transition focus:border-[#2F5BFF] focus:bg-white"
             />
           </div>
 
           <select
             value={roleFilter}
             onChange={(e) => handleRoleChange(e.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+            className="rounded-[14px] border border-[#D7E1F0] bg-[#F8FAFD] px-4 py-2.5 text-sm font-semibold text-[#43556E] outline-none transition focus:border-[#2F5BFF]"
           >
             <option value="">All Roles</option>
             <option value="super_admin">Super Admin</option>
@@ -169,9 +171,9 @@ export function Users() {
         </div>
 
         {/* Table */}
-        <div className="border rounded-lg overflow-hidden">
+        <div className="workspace-panel overflow-hidden">
           <Table>
-            <TableHeader className="bg-slate-50">
+            <TableHeader className="bg-[#F8FAFD]">
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
@@ -267,7 +269,7 @@ export function Users() {
             <div className="flex gap-2">
               <Button
                 variant="ghost"
-                className="h-8 px-3 border border-dashed border-slate-300"
+                className="h-9 rounded-[14px] bg-[#EDF3FF] px-4 text-sm font-semibold text-[#5B6B7F] hover:bg-[#DCE7FF] hover:text-[#0A2647]"
                 disabled={page <= 1}
                 onClick={() => handlePageChange(page - 1)}
               >
@@ -275,7 +277,7 @@ export function Users() {
               </Button>
               <Button
                 variant="ghost"
-                className="h-8 px-3 border border-dashed border-slate-300"
+                className="h-9 rounded-[14px] bg-[#EDF3FF] px-4 text-sm font-semibold text-[#5B6B7F] hover:bg-[#DCE7FF] hover:text-[#0A2647]"
                 disabled={page >= totalPages}
                 onClick={() => handlePageChange(page + 1)}
               >

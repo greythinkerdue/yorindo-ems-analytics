@@ -1114,8 +1114,8 @@ export async function previewCommunicationCampaign(
     subject: input.subject.trim() || "No subject",
     bodyHtml: input.bodyHtml,
     bodyText: input.bodyText ?? stripHtml(input.bodyHtml),
-    recipientName: sampleRecipient?.fullName ?? "Participant Preview",
-    recipientEmail: sampleRecipient?.email ?? "participant@example.com",
+    recipientName: sampleRecipient?.fullName ?? "",
+    recipientEmail: sampleRecipient?.email ?? "",
     eventTitle: sampleRecipient?.eventTitle ?? fallbackEvent?.title ?? null,
     eventDate: sampleRecipient?.eventDate ?? fallbackEvent?.eventDate ?? null,
     eventLocation: fallbackEvent?.location ?? null,
@@ -1137,8 +1137,8 @@ export async function previewCommunicationCampaign(
       email: env.mailFromEmail,
     },
     sampleRecipient: {
-      name: sampleRecipient?.fullName ?? "Participant Preview",
-      email: sampleRecipient?.email ?? "participant@example.com",
+      name: sampleRecipient?.fullName ?? "",
+      email: sampleRecipient?.email ?? "",
     },
     event: {
       id: sampleRecipient?.eventId ?? fallbackEvent?.id ?? null,

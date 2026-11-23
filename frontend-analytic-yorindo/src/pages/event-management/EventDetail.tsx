@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Copy, ExternalLink, FilePlus2, QrCode, Users } from "lucide-react";
+import { Check, Copy, ExternalLink, FilePlus2, QrCode } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "@/services/api";
 import { getEventParticipants } from "@/services/eventWorkspaceService";
@@ -26,6 +26,10 @@ type EventDetailItem = {
   event_date?: string;
   location?: string;
   status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: { _id?: string; name?: string } | null;
+  updatedBy?: { _id?: string; name?: string } | null;
   registrationForm?: {
     version?: number;
     publishedAt?: string | null;
@@ -35,6 +39,27 @@ type EventDetailItem = {
 
 const getEventDate = (item?: EventDetailItem | null) =>
   item?.eventDate ?? item?.event_date ?? null;
+
+const formatAuditDateTime = (value?: string | null): string | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const day = date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const time = date
+    .toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+    .replace(".", ":");
+
+  return `${day}, ${time}`;
+};
 
 /** Transisi status event mengikuti aturan yang sama dengan backend/EMS. */
 const STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -93,7 +118,6 @@ export default function EventDetail() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const canEditEvent = usePermission("events:edit");
-  const canCheckIn = usePermission("registrations:checkin");
 
   useEffect(() => {
     if (!eventId) {
@@ -205,7 +229,8 @@ export default function EventDetail() {
   const eventDate = getEventDate(detail);
   const registrationFields = detail.registrationForm?.fields?.length ?? 0;
   const formVersion = detail.registrationForm?.version ?? 1;
-  const hasPublicPage = Boolean(publicRegistrationUrl);
+  const lastUpdatedAt = formatAuditDateTime(detail.updatedAt ?? detail.createdAt);
+  const lastUpdatedBy = detail.updatedBy?.name?.trim() || "Sistem";
 
   return (
     <div className="space-y-6">
@@ -244,53 +269,6 @@ export default function EventDetail() {
             </p>
           </div>
 
-          <div className="grid w-full grid-cols-1 gap-2 lg:w-[260px] lg:shrink-0">
-            <Link
-              to={`/events/${eventId}/participants`}
-              className="group inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#DCE5F2] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A2647] shadow-[0_6px_14px_rgba(15,23,42,0.05)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_12px_22px_rgba(15,23,42,0.12)] active:translate-y-0 active:scale-[0.98]"
-            >
-              <Users size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-              Participants
-            </Link>
-            {canCheckIn ? (
-              <Link
-                to={`/events/${eventId}/check-in`}
-                className="group inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#DCE5F2] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A2647] shadow-[0_6px_14px_rgba(15,23,42,0.05)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_12px_22px_rgba(15,23,42,0.12)] active:translate-y-0 active:scale-[0.98]"
-              >
-                <QrCode size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-                Check-In Desk
-              </Link>
-            ) : null}
-            <Link
-              to={`/events/${eventId}/analytics`}
-              className="group inline-flex items-center justify-center gap-1.5 rounded-[12px] bg-[#0A2647] px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_16px_rgba(10,38,71,0.16)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#133A6F] hover:shadow-[0_14px_24px_rgba(10,38,71,0.28)] active:translate-y-0 active:scale-[0.98]"
-            >
-              <BarChart3 size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-              Event Analytics
-            </Link>
-            <Link
-              to={`/events/${eventId}/registration-form`}
-              className={`group inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#DCE5F2] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A2647] shadow-[0_6px_14px_rgba(15,23,42,0.05)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_12px_22px_rgba(15,23,42,0.12)] active:translate-y-0 active:scale-[0.98] ${
-                canCheckIn && !hasPublicPage ? "sm:col-span-2" : ""
-              }`}
-            >
-              <FilePlus2 size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-              Form Builder Registration
-            </Link>
-            {publicRegistrationUrl ? (
-              <a
-                href={publicRegistrationUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`group inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#DCE5F2] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A2647] shadow-[0_6px_14px_rgba(15,23,42,0.05)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_12px_22px_rgba(15,23,42,0.12)] active:translate-y-0 active:scale-[0.98] ${
-                  !canCheckIn ? "sm:col-span-2" : ""
-                }`}
-              >
-                <ExternalLink size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-                Open Public Page
-              </a>
-            ) : null}
-          </div>
         </div>
       </section>
 
@@ -409,6 +387,22 @@ export default function EventDetail() {
                   : "Belum dipublish"}
               </p>
             </div>
+            <div className="md:col-span-2 rounded-[22px] border border-[#E5ECF6] bg-white p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">
+                Informasi Event
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[#43556E]">
+                {lastUpdatedAt ? (
+                  <>
+                    Informasi event terakhir diperbarui pada{" "}
+                    <span className="font-semibold text-[#0A2647]">{lastUpdatedAt}</span> oleh{" "}
+                    <span className="font-semibold text-[#0A2647]">{lastUpdatedBy}</span>.
+                  </>
+                ) : (
+                  "Belum ada catatan pembaruan untuk informasi event ini."
+                )}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -426,8 +420,8 @@ export default function EventDetail() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-[20px] bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.05)]">
-              <p className="break-all text-sm leading-6 text-[#43556E]">
+            <div className="relative mt-5 rounded-[20px] bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.05)]">
+              <p className="break-all pr-10 text-sm leading-6 text-[#43556E]">
                 {publicRegistrationUrl || "URL public akan tersedia setelah event punya slug."}
               </p>
               {isPublicLinkLocal ? (
@@ -443,12 +437,38 @@ export default function EventDetail() {
                     await navigator.clipboard.writeText(publicRegistrationUrl);
                     setCopied(true);
                   }}
-                  className="group mt-4 inline-flex items-center gap-2 rounded-[14px] border border-[#DCE5F2] bg-[#F8FAFD] px-4 py-2 text-sm font-semibold text-[#0A2647] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_10px_18px_rgba(15,23,42,0.10)] active:translate-y-0 active:scale-[0.98]"
+                  title={copied ? "Link tersalin" : "Salin link"}
+                  aria-label={copied ? "Link tersalin" : "Salin link"}
+                  className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-[10px] border transition-all duration-200 ease-out active:scale-95 ${
+                    copied
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                      : "border-[#DCE5F2] bg-[#F8FAFD] text-[#0A2647] hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_8px_14px_rgba(15,23,42,0.10)]"
+                  }`}
                 >
-                  <Copy size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
-                  {copied ? "Link copied" : "Copy link"}
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
                 </button>
               ) : null}
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <Link
+                  to={`/events/${eventId}/registration-form`}
+                  className="group inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#DCE5F2] bg-[#F8FAFD] px-3 py-2.5 text-[13px] font-semibold text-[#0A2647] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_10px_18px_rgba(15,23,42,0.10)] active:translate-y-0 active:scale-[0.98]"
+                >
+                  <FilePlus2 size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+                  Form Builder
+                </Link>
+                {publicRegistrationUrl ? (
+                  <a
+                    href={publicRegistrationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#DCE5F2] bg-[#F8FAFD] px-3 py-2.5 text-[13px] font-semibold text-[#0A2647] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#AFC4F6] hover:bg-[#EDF3FF] hover:shadow-[0_10px_18px_rgba(15,23,42,0.10)] active:translate-y-0 active:scale-[0.98]"
+                  >
+                    <ExternalLink size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+                    Public Page
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
 

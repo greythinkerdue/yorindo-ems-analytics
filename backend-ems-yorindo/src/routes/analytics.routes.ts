@@ -25,6 +25,10 @@ import {
   handleGetEventSurveyAnalyticsOverview,
   handleGetEventSurveyInsight,
 } from "../controllers/survey-analytic.controller.ts";
+import {
+  handleGetDashboardOverview,
+  handleGetDashboardOperationsBrief,
+} from "../controllers/dashboard.controller.ts";
 
 const router = Router();
 
@@ -35,12 +39,28 @@ function notImplemented(_req: Request, res: Response) {
   });
 }
 
-// GET / — analytics overview
+// GET / — global dashboard overview (lintas event)
 router.get(
   "/",
   requireAuth,
   requirePermission("analytics:view"),
-  notImplemented,
+  handleGetDashboardOverview,
+);
+
+// GET /overview — alias eksplisit untuk dashboard
+router.get(
+  "/overview",
+  requireAuth,
+  requirePermission("analytics:view"),
+  handleGetDashboardOverview,
+);
+
+// GET /operations-brief — AI brief operasional lintas event
+router.get(
+  "/operations-brief",
+  requireAuth,
+  requirePermission("analytics:view"),
+  handleGetDashboardOperationsBrief,
 );
 
 // GET /events/:eventId — per-event analytics

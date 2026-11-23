@@ -4,7 +4,10 @@
  */
 
 import { Types } from "mongoose";
-import { getEventAnalyticsOverview } from "./event-analytic.service.ts";
+import {
+  getEventAnalyticsOverview,
+  type EventAnalyticsOverview,
+} from "./event-analytic.service.ts";
 import { EventAnalyticInsightCache } from "../models/index.ts";
 import { chat } from "../utils/llmClient.ts";
 
@@ -14,25 +17,85 @@ export interface EventAnalyticsInsight {
   recommendations: string[];
 }
 
-function buildPrompt(overview: unknown): string {
-  return `Berikut data analytics event (JSON). Buat insight singkat dalam Bahasa Indonesia.\n` +
-    `BALAS HANYA JSON valid dengan format:\n` +
-    `{"summary":"...","highlights":["..."],"recommendations":["..."]}\n` +
-    `- summary maksimal 2 kalimat.\n` +
-    `- highlights maksimal 3 poin.\n` +
-    `- recommendations maksimal 3 poin.\n` +
-    `Data: ${JSON.stringify(overview)}`;
+/**
+ * Insight harus dipakai untuk puluhan event dengan status berbeda, bukan
+ * satu event contoh. Karena itu prompt-nya:
+ * - lifecycle-aware (upcoming/ongoing/done/cancelled diperlakukan beda),
+ * - diberi konteks event + benchmark agar tidak mengarang "bagus/buruk",
+ * - ditulis untuk orang lapangan, bukan jargon analis,
+ * - highlights = metrik + makna, recommendations = satu aksi (1:1, tanpa duplikasi).
+ */
+function buildPrompt(overview: EventAnalyticsOverview): string {
+  return `
+Kamu adalah analyst operasional Yorindo Communication. Yorindo punya banyak event dengan status dan tanggal berbeda-beda. Baca data SATU event di bawah, lalu beri catatan singkat yang bisa langsung dipakai panitia event itu. Jangan meniru pola insight dari event lain.
+
+KONTEKS EVENT:
+${JSON.stringify(overview.event)}
+
+DATA EVENT INI:
+${JSON.stringify({
+  summary: overview.summary,
+  statusBreakdown: overview.statusBreakdown,
+  registrationsOverTime: overview.registrationsOverTime,
+  topIndustries: overview.topIndustries,
+  topCities: overview.topCities,
+  topRejectionReasons: overview.topRejectionReasons,
+  ticketDeliveryBreakdown: overview.ticketDeliveryBreakdown,
+})}
+
+PEMBANDING (rata-rata event lain):
+${JSON.stringify(overview.benchmark)}
+
+CARA KERJA:
+1. Ikuti STATUS event. upcoming/registration = fokus kesiapan pendaftaran, approval, dan tiket sebelum acara. ongoing = fokus check-in dan yang belum hadir. done = evaluasi dan rapikan data; jangan menghubungi peserta untuk konfirmasi kehadiran dan jangan bilang "sebelum acara". cancelled = konfirmasi pembatalan dan bersihkan data.
+2. Tanggal asli sudah ada di KONTEKS EVENT. Jangan mengarang tanggal lain, nama tim/divisi, kapasitas, biaya, atau alasan yang tidak tertulis di data.
+3. Tulis seperti analyst yang mempresentasikan finding ke atasan: ringkas, sopan, profesional, tanpa basa-basi. Sajikan angka sebagai persentase, misal "Kehadiran 77.8%", "Approval 20%", "100% tiket belum dikirim" — bukan "7 dari 9 hadir". Dilarang pola "Dari 5 pendaftar, hanya 1 ..."; cukup "Approval 20%, di bawah rata-rata 62.7%.". Jangan pakai istilah teknis "ticket delivery idle" atau "tiket idle"; cukup "tiket belum dikirim". Dilarang jargon: conversion, funnel, upsell, no-show rate, product-market fit, segmentasi, engagement. Satu kalimat = satu metrik. Dilarang menggabung dua angka dengan "dengan", "serta", atau "dan juga". Dilarang kata kerja abstrak: dorong, tingkatkan, meningkatkan, optimalkan, perkuat, maksimalkan, evaluasi, awasi, pastikan, perbaiki, fokus. Pakai kata kerja konkret: hubungi, kirim, setujui, arsipkan, konfirmasi, jadwalkan, minta, update.
+4. Tulis hanya hal yang bisa dicek atau dikerjakan. Maksimal 3 poin. Kalau cuma satu yang penting, tulis satu saja. Jangan mengisi poin dengan kalimat basa-basi seperti "perlu ditingkatkan".
+5. highlights[i] = metrik + artinya SAJA, TANPA aksi dan tanpa tanda panah. recommendations[i] = SATU aksi konkret untuk temuan pada indeks yang sama. Jumlah dan urutan harus sama persis (1:1). Dilarang mengulang teks aksi di highlights. Aksi diawali kata kerja, menyebut objek jelas, bisa langsung dikerjakan panitia — bukan "perlu ditingkatkan", tanpa nama tim dan tanpa tanggal buatan.
+6. Pakai PEMBANDING hanya kalau membantu, sebut sebagai "rata-rata event lain". Abaikan kalau eventsCompared = 0.
+7. Kalau event belum punya pendaftar, jangan menulis "data masih sedikit". Tulis satu hal yang memang bisa dicek dari tahap event dan satu langkah konkret.
+8. Maksimal 150 kata. Tanpa Markdown, tanpa label "Fakta/Makna/Tindakan", tanpa "Prioritas 1".
+
+BALAS HANYA JSON valid dengan format:
+{
+  "summary": "Satu kalimat keputusan, diawali kata kerja konkret, satu prioritas, maksimal satu angka.",
+  "highlights": ["Approval 20%, di bawah rata-rata 62.7%.", "100% tiket belum dikirim."],
+  "recommendations": ["Setujui pendaftar yang menunggu.", "Kirim tiket ke seluruh peserta."]
+}
+`.trim();
+}
+
+function normalizeInsightText(value: string): string {
+  return value
+    .replace(/ticket delivery idle/gi, "tiket belum dikirim")
+    .replace(/(\d+)\s+tiket idle/gi, "$1 tiket")
+    .replace(/tiket idle/gi, "tiket belum dikirim")
+    .trim();
 }
 
 function safeParse(content: string): EventAnalyticsInsight {
   try {
-    const parsed = JSON.parse(content) as EventAnalyticsInsight;
+    const parsed = JSON.parse(content) as Partial<EventAnalyticsInsight>;
+    const highlights = Array.isArray(parsed.highlights)
+      ? parsed.highlights
+          .filter((item): item is string => typeof item === "string")
+          .map(normalizeInsightText)
+      : [];
+    const recommendations = Array.isArray(parsed.recommendations)
+      ? parsed.recommendations
+          .filter((item): item is string => typeof item === "string")
+          .map(normalizeInsightText)
+      : [];
+
+    // Jamin tiap finding punya pasangan aksi, walau LLM keliru jumlahnya.
+    const pairCount = Math.min(highlights.length, recommendations.length);
+
     return {
-      summary: parsed.summary ?? "",
-      highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
-      recommendations: Array.isArray(parsed.recommendations)
-        ? parsed.recommendations
-        : [],
+      summary: normalizeInsightText(
+        typeof parsed.summary === "string" ? parsed.summary : "",
+      ),
+      highlights: highlights.slice(0, pairCount),
+      recommendations: recommendations.slice(0, pairCount),
     };
   } catch {
     return {

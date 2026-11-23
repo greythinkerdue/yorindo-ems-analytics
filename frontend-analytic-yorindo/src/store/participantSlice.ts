@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
 import type { Participant, ParticipantFilter } from "@/types/participant"
-import { mockParticipants } from "@/utils/mockData"
 
 interface ParticipantState {
   participants: Participant[]
@@ -16,7 +15,7 @@ interface ParticipantState {
 }
 
 const initialState: ParticipantState = {
-  participants: mockParticipants,
+  participants: [],
   isLoading: false,
   selectedParticipant: null,
   filters: {
@@ -28,7 +27,7 @@ const initialState: ParticipantState = {
   pagination: {
     page: 1,
     limit: 10,
-    total: mockParticipants.length,
+    total: 0,
   },
 }
 

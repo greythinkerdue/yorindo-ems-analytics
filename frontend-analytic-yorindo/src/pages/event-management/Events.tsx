@@ -94,7 +94,8 @@ const Events = () => {
   const [authNotice, setAuthNotice] = useState("");
   const [pageError, setPageError] = useState("");
   const [pageSuccess, setPageSuccess] = useState("");
-  const pageLimit = 5;
+  // 3 kolom x 2 baris = maksimal 6 event per halaman sebelum pagination next.
+  const pageLimit = 6;
 
   // --- State Baru buat Create Event ---
   const [showModal, setShowModal] = useState(false);
@@ -366,9 +367,11 @@ const Events = () => {
     });
   }, [events]);
 
+  // "All" harus menampilkan semua status agar isi halaman sesuai pagination
+  // backend (9 event). Event selesai tetap bisa dilihat lewat tab "Closed".
   const filteredEvents =
     activeTab === "All"
-      ? mappedEvents.filter((event) => event.status !== "Closed")
+      ? mappedEvents
       : mappedEvents.filter((event) => event.status === activeTab);
 
   const currentEvents = filteredEvents;
@@ -382,20 +385,20 @@ const Events = () => {
   }, [activeTab, currentEvents.length]);
 
   return (
-    <div className="min-h-screen space-y-8 rounded-[28px] border border-[#D7E1F0] bg-[#F8FAFD] p-8 shadow-[0_14px_30px_rgba(10,38,71,0.05)]">
+    <div className="workspace-shell">
       {/* Header */}
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+      <div className="workspace-header">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#94A3B8]">Event Workspace</p>
-          <h1 className="text-[2.15rem] font-bold tracking-[-0.04em] text-[#0A2647]">Event Management</h1>
-          <p className="max-w-2xl text-sm leading-7 text-[#5B6B7F]">
+          <p className="workspace-eyebrow">Event Workspace</p>
+          <h1 className="workspace-title">Event Management</h1>
+          <p className="workspace-subtitle">
             Kelola event yang sudah dibuat, cek progres registrasi, dan buat event baru langsung dari sini.
           </p>
         </div>
       </div>
 
       {/* Tabs & Create Button Section */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border border-[#E3EAF5] bg-white p-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)]">
+      <div className="workspace-toolbar">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap gap-3">
             {tabs.map((tab) => (

@@ -40,6 +40,9 @@ export interface ISurvey {
   /** Display title of the survey shown to participants. */
   title: string;
 
+  /** Optional description shown under the survey title. */
+  description?: string | null;
+
   /** Ordered list of questions in this survey. */
   questions: ISurveyQuestion[];
 
@@ -71,6 +74,12 @@ const SurveySchema = new Schema<ISurvey>(
     title: {
       type: String,
       required: true,
+      trim: true,
+      set: safeTrim,
+    },
+    description: {
+      type: String,
+      default: null,
       trim: true,
       set: safeTrim,
     },
