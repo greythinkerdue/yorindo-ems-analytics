@@ -206,11 +206,8 @@ function ActionCard({
           <Icon size={18} />
         </div>
       </div>
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <p
-          className="min-w-0 truncate text-[11px] text-[#5B6B7F]"
-          title={detail}
-        >
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
+        <p className="min-w-0 break-words leading-4 text-[11px] text-[#5B6B7F]">
           {detail}
         </p>
         {action}
@@ -661,7 +658,7 @@ export default function DashboardHome() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-[#0A2647]">
+                      <p className="break-words leading-5 text-sm font-semibold text-[#0A2647]">
                         {item.title}
                       </p>
                       <span
@@ -763,8 +760,8 @@ export default function DashboardHome() {
               {(overview?.audience.topIndustries ?? []).map((item) => (
                 <div key={item.name}>
                   <div className="flex items-center justify-between gap-2 text-xs text-[#5B6B7F]">
-                    <span className="truncate">{item.name}</span>
-                    <span className="font-semibold text-[#0A2647]">
+                    <span className="min-w-0 break-words">{item.name}</span>
+                    <span className="shrink-0 font-semibold text-[#0A2647]">
                       {formatNumber(item.count)}
                     </span>
                   </div>
@@ -787,8 +784,8 @@ export default function DashboardHome() {
               {(overview?.audience.topCities ?? []).map((item) => (
                 <div key={item.name}>
                   <div className="flex items-center justify-between gap-2 text-xs text-[#5B6B7F]">
-                    <span className="truncate">{item.name}</span>
-                    <span className="font-semibold text-[#0A2647]">
+                    <span className="min-w-0 break-words">{item.name}</span>
+                    <span className="shrink-0 font-semibold text-[#0A2647]">
                       {formatNumber(item.count)}
                     </span>
                   </div>
