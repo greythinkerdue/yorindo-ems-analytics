@@ -18,6 +18,10 @@ import type {
 import type { PaginatedData } from "../types/api/index.ts";
 import { Types, type PipelineStage } from "mongoose";
 import { slugifyUnique } from "../utils/slugify.ts";
+import {
+  bumpAnalyticsVersion,
+  removeEventMetric,
+} from "./event-metric-rollup.service.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -317,6 +321,8 @@ export async function createEvent(
     updatedBy: null,
   }).save();
 
+  await bumpAnalyticsVersion();
+
   return doc.toObject();
 }
 
@@ -360,6 +366,8 @@ export async function updateEvent(
     },
   ).lean<IEvent & { _id: unknown }>();
 
+  if (doc) await bumpAnalyticsVersion();
+
   return doc;
 }
 
@@ -387,6 +395,8 @@ export async function deleteEvent(
     { new: true },
   ).lean<IEvent & { _id: unknown }>();
 
+  if (doc) await bumpAnalyticsVersion();
+
   return doc;
 }
 
@@ -405,6 +415,7 @@ export async function hardDeleteEvent(id: string): Promise<boolean> {
 
   // Cascade: remove all registrations linked to this event.
   await Registration.deleteMany({ eventId: deleted._id });
+  await removeEventMetric(deleted._id);
 
   return true;
 }

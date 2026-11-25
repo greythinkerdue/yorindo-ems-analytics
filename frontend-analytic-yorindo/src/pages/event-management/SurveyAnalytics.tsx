@@ -248,7 +248,7 @@ const SurveyAnalytics = () => {
     setAnalyticsError("");
 
     const result = await api.get<EventSurveyAnalyticsResult>(
-      `/api/v1/survey-analytics/events/${eventId}?ts=${Date.now()}`,
+      `/api/v1/survey-analytics/events/${eventId}`,
     );
 
     setIsLoadingAnalytics(false);
@@ -273,8 +273,10 @@ const SurveyAnalytics = () => {
     setIsLoadingInsight(true);
     setInsightError("");
 
+    // First load uses the DB cache. Only an explicit second click regenerates.
+    const shouldRefresh = Boolean(insightData);
     const result = await api.get<EventSurveyInsightResult>(
-      `/api/v1/survey-analytics/events/${eventId}/insights?ts=${Date.now()}`,
+      `/api/v1/survey-analytics/events/${eventId}/insights${shouldRefresh ? "?refresh=1" : ""}`,
     );
 
     setIsLoadingInsight(false);

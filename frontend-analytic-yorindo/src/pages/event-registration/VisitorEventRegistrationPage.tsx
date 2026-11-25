@@ -59,7 +59,9 @@ export default function VisitorEventRegistrationPage() {
           throw new Error(msg || `Request failed (${res.status})`);
         }
 
-        const json = (await res.json()) as FormBuilderResponse;
+        const body = await res.text();
+        if (!body.trim()) throw new Error(`Empty response (${res.status})`);
+        const json = JSON.parse(body) as FormBuilderResponse;
 
         if (!json.success) {
           setError(json.message || "Event not found");

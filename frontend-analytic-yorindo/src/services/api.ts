@@ -59,6 +59,24 @@ function isPublicPath(path: string) {
   );
 }
 
+/**
+ * Proxy/layer 7 kadang mengembalikan 200 atau 5xx dengan body kosong.
+ * `response.json()` akan melempar "Unexpected end of JSON input" dalam kasus
+ * itu, jadi baca sebagai teks dulu dan validasi sendiri.
+ */
+async function readEnvelope<T>(response: Response): Promise<ApiEnvelope<T> | null> {
+  if (response.status === 204) return null;
+
+  const body = await response.text();
+  if (!body.trim()) return null;
+
+  try {
+    return JSON.parse(body) as ApiEnvelope<T>;
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -83,12 +101,12 @@ async function request<T>(
       headers,
     });
 
-    const payload =
-      response.status === 204
-        ? null
-        : ((await response.json()) as ApiEnvelope<T> | null);
+    const payload = await readEnvelope<T>(response);
 
     if (!response.ok) {
+      const fallbackMessage = payload
+        ? "Request gagal diproses."
+        : `Request gagal diproses (HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}).`;
       // 401 = sesi tidak valid → logout. 403 = kurang permission → cukup tampilkan
       // pesan error, jangan mengeluarkan user dari aplikasi.
       if (response.status === 401 && token && !isPublicPath(path)) {
@@ -99,8 +117,8 @@ async function request<T>(
 
       return {
         data: null,
-        error: payload?.message ?? "Request gagal diproses.",
-        message: payload?.message ?? "Request gagal diproses.",
+        error: payload?.message ?? fallbackMessage,
+        message: payload?.message ?? fallbackMessage,
         status: response.status,
       };
     }

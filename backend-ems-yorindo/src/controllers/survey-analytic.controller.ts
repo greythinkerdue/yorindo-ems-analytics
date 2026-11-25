@@ -56,13 +56,15 @@ export async function handleGetEventSurveyAnalyticsOverview(
 }
 
 export async function handleGetEventSurveyInsight(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
     const { eventId } = res.locals.parsed.params as AnalyticsEventParams;
-    const result = await getEventSurveyInsight(eventId);
+    const raw = req.query.refresh;
+    const refresh = raw === "1" || raw === "true";
+    const result = await getEventSurveyInsight(eventId, { refresh });
 
     if (!result) {
       sendError(res, 404, "Event tidak ditemukan");

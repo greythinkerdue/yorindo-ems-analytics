@@ -15,6 +15,7 @@ import {
 } from "./email.service.ts";
 import { signRegistrationTicket } from "../utils/jwt.ts";
 import { enqueueRegistrationTicketJob } from "./email-queue.service.ts";
+import { bumpEventMetrics } from "./event-metric-rollup.service.ts";
 
 export type RegistrationTicketQueueResult = {
   queueAccepted: boolean;
@@ -89,7 +90,13 @@ function buildQueuedTicketDelivery(queuedAt: Date) {
 async function markTicketDeliveryFailed(
   registrationId: Types.ObjectId,
   reason: string,
+  eventId: Types.ObjectId | string,
 ) {
+  // Only a transition away from "sent" changes ticketsNotSent.
+  const previous = await Registration.findById(registrationId)
+    .select("ticketDelivery.status")
+    .lean<{ ticketDelivery?: { status?: string } } | null>();
+
   await Registration.findByIdAndUpdate(registrationId, {
     $set: {
       "ticketDelivery.status": "failed",
@@ -98,6 +105,10 @@ async function markTicketDeliveryFailed(
       "ticketDelivery.failureReason": reason,
     },
   });
+
+  if (previous?.ticketDelivery?.status === "sent") {
+    await bumpEventMetrics(eventId, { ticketsNotSent: 1 });
+  }
 }
 
 function renderTicketEmail(params: {
@@ -253,7 +264,7 @@ export async function queueRegistrationTicketEmail(
   }
 
   const registration = await Registration.findById(objectId)
-    .select("participantId status ticket")
+    .select("participantId eventId status ticket")
     .lean();
 
   if (
@@ -277,7 +288,7 @@ export async function queueRegistrationTicketEmail(
   if (!recipient) {
     const reason =
       "Participant belum memiliki email personal atau company yang valid untuk pengiriman QR ticket.";
-    await markTicketDeliveryFailed(objectId, reason);
+    await markTicketDeliveryFailed(objectId, reason, registration.eventId);
     return {
       queueAccepted: false,
       status: "failed",
@@ -308,7 +319,7 @@ export async function queueRegistrationTicketEmail(
     const reason =
       error instanceof Error ? error.message : "Unknown RabbitMQ queue error.";
 
-    await markTicketDeliveryFailed(objectId, reason);
+    await markTicketDeliveryFailed(objectId, reason, registration.eventId);
 
     return {
       queueAccepted: false,
@@ -403,6 +414,7 @@ export async function processQueuedRegistrationTicketEmail(
     await markTicketDeliveryFailed(
       objectId,
       "Participant belum memiliki email tujuan untuk pengiriman QR ticket.",
+      registration.eventId,
     );
     return;
   }
@@ -434,20 +446,31 @@ export async function processQueuedRegistrationTicketEmail(
       ],
     });
 
-    await Registration.findByIdAndUpdate(objectId, {
-      $set: {
-        "ticketDelivery.status": "sent",
-        "ticketDelivery.sentAt": new Date(),
-        "ticketDelivery.failedAt": null,
-        "ticketDelivery.failureReason": null,
+    // The guard makes the counter update idempotent across worker retries.
+    const sent = await Registration.findOneAndUpdate(
+      {
+        _id: objectId,
+        "ticketDelivery.status": "processing",
       },
-    });
+      {
+        $set: {
+          "ticketDelivery.status": "sent",
+          "ticketDelivery.sentAt": new Date(),
+          "ticketDelivery.failedAt": null,
+          "ticketDelivery.failureReason": null,
+        },
+      },
+    ).lean();
+
+    if (sent) {
+      await bumpEventMetrics(sent.eventId, { ticketsNotSent: -1 });
+    }
   } catch (error) {
     const reason =
       error instanceof Error
         ? error.message
         : "Unknown QR ticket delivery error.";
 
-    await markTicketDeliveryFailed(objectId, reason);
+    await markTicketDeliveryFailed(objectId, reason, registration.eventId);
   }
 }

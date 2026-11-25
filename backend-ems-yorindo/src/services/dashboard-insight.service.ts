@@ -6,8 +6,13 @@
  * dan merangkai kalimat eksekusi, bukan mengulang angka KPI.
  */
 
+import {
+  DashboardCache,
+  DASHBOARD_BRIEF_CACHE_KEY,
+} from "../models/index.ts";
 import { chat } from "../utils/llmClient.ts";
-import { getDashboardOverview } from "./dashboard.service.ts";
+import { getCachedDashboardOverview } from "./dashboard-overview-cache.service.ts";
+import type { DashboardOverview } from "./dashboard.service.ts";
 
 export interface DashboardOperationsBrief {
   focus: string;
@@ -20,12 +25,11 @@ export interface DashboardOperationsBrief {
 
 type BriefInsight = Omit<DashboardOperationsBrief, "cached">;
 
-interface CachedBrief {
-  dataUpdatedAt: string;
-  insight: BriefInsight;
-}
+/** Safety net: regenerate at least once a day even if the version is stable. */
+const BRIEF_TTL_MS = 24 * 60 * 60 * 1000;
 
-let cachedBrief: CachedBrief | null = null;
+/** Singleflight for the cold-cache case (two dashboard requests in parallel). */
+let inflight: Promise<BriefInsight> | null = null;
 
 function normalizeText(value: string): string {
   return value
@@ -54,7 +58,7 @@ function tidyText(value: string): string {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
 }
 
-function buildOverviewPrompt(overview: Awaited<ReturnType<typeof getDashboardOverview>>): string {
+function buildOverviewPrompt(overview: DashboardOverview): string {
   const payload = {
     dataUpdatedAt: overview.dataUpdatedAt,
     watchlist: overview.watchlist,
@@ -127,7 +131,7 @@ function safeParse(
   }
 }
 
-function buildFallback(overview: Awaited<ReturnType<typeof getDashboardOverview>>) {
+function buildFallback(overview: DashboardOverview) {
   const first = overview.watchlist[0];
   if (!first) {
     return {
@@ -144,30 +148,61 @@ function buildFallback(overview: Awaited<ReturnType<typeof getDashboardOverview>
 export async function getDashboardOperationsBrief(
   refresh = false,
 ): Promise<DashboardOperationsBrief> {
-  const overview = await getDashboardOverview();
+  // Shares the cached overview with /analytics/overview, so its aggregations
+  // and rollup reads run at most once per data version even when both
+  // endpoints are hit in the same request window.
+  const overview = await getCachedDashboardOverview(refresh);
+  const version = overview.dataUpdatedAt;
 
-  if (
-    !refresh &&
-    cachedBrief &&
-    cachedBrief.dataUpdatedAt === overview.dataUpdatedAt
-  ) {
-    return { ...cachedBrief.insight, cached: true };
+  if (!refresh) {
+    const cached = await DashboardCache.findOne({
+      key: DASHBOARD_BRIEF_CACHE_KEY,
+      version,
+    })
+      .select("payload expiresAt")
+      .lean<{ payload: BriefInsight; expiresAt: Date } | null>();
+
+    if (cached && new Date(cached.expiresAt).getTime() > Date.now()) {
+      return { ...cached.payload, cached: true };
+    }
   }
 
-  const content = await chat([
-    {
-      role: "developer",
-      content: "Kamu manajer operasional event. Ikuti format JSON dengan ketat dan pilih satu prioritas saja.",
-    },
-    { role: "user", content: buildOverviewPrompt(overview) },
-  ]);
+  if (inflight) return { ...(await inflight), cached: true };
 
-  const insight = safeParse(
-    String(content),
-    overview.dataUpdatedAt,
-    buildFallback(overview),
-  );
-  cachedBrief = { dataUpdatedAt: overview.dataUpdatedAt, insight };
+  inflight = (async () => {
+    const content = await chat([
+      {
+        role: "developer",
+        content: "Kamu manajer operasional event. Ikuti format JSON dengan ketat dan pilih satu prioritas saja.",
+      },
+      { role: "user", content: buildOverviewPrompt(overview) },
+    ]);
 
-  return { ...insight, cached: false };
+    const insight = safeParse(
+      String(content),
+      version,
+      buildFallback(overview),
+    );
+
+    await DashboardCache.findOneAndUpdate(
+      { key: DASHBOARD_BRIEF_CACHE_KEY },
+      {
+        $set: {
+          payload: insight,
+          version,
+          generatedAt: new Date(),
+          expiresAt: new Date(Date.now() + BRIEF_TTL_MS),
+        },
+      },
+      { upsert: true },
+    );
+
+    return insight;
+  })();
+
+  try {
+    return { ...(await inflight), cached: false };
+  } finally {
+    inflight = null;
+  }
 }

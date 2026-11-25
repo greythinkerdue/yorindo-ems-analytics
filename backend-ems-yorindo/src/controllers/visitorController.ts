@@ -7,6 +7,7 @@ import Participant from "../models/Participant.ts";
 import Registration from "../models/Registration.ts";
 import SurveyResponse from "../models/SurveyResponse.ts";
 import { Event } from "../models/index.ts";
+import { bumpEventMetrics } from "../services/event-metric-rollup.service.ts";
 import type { VisitorRegistrationBody } from "../validators/visitor.validators.ts";
 
 interface CustomAnswerInput {
@@ -136,7 +137,12 @@ export const submitVisitorRegistration = async (
       { new: true, upsert: true },
     );
 
-    const registration = await Registration.findOneAndUpdate(
+    // Use the raw driver so we can read `lastErrorObject.upserted` and bump
+    // counters only for a real insert. The unique (eventId, participantId)
+    // index prevents a concurrent request from inserting a second document.
+    // Timestamps are set explicitly because the driver bypasses Mongoose hooks.
+    const now = new Date();
+    const upsertResult = await Registration.collection.findOneAndUpdate(
       { eventId: event_id, participantId: participant!._id },
       {
         $set: {
@@ -144,16 +150,30 @@ export const submitVisitorRegistration = async (
           industrySnapshot: { refId: industry!._id, name: industry!.name },
           jobTitleSnapshot: { refId: jobTitle!._id, name: jobTitle!.name },
           citySnapshot: { refId: city!._id, name: city!.name },
+          updatedAt: now,
         },
         $setOnInsert: {
           eventId: event_id,
           participantId: participant!._id,
           participantType: "participant",
           status: "pending",
+          createdAt: now,
         },
       },
-      { new: true, upsert: true },
+      { upsert: true, returnDocument: "after" },
     );
+
+    const registration = upsertResult?.value ?? null;
+
+    if (upsertResult?.lastErrorObject?.upserted) {
+      // A fresh registration has no ticketDelivery yet, which still counts as
+      // "not sent" in the dashboard definition.
+      await bumpEventMetrics(event_id, {
+        registrations: 1,
+        pending: 1,
+        ticketsNotSent: 1,
+      });
+    }
 
     const answersMap = buildCustomValueMap(survei_result);
 

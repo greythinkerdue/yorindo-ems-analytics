@@ -79,6 +79,8 @@ router.get(
 router.get(
   // Event: ringkasan peserta
   "/events/:eventId/participants/summary",
+  requireAuth,
+  requirePermission("analytics:view"),
   validate(analyticsEventParamsSchema, "params"),
   handleGetEventParticipantAnalytics,
 );
@@ -86,6 +88,8 @@ router.get(
 router.get(
   // Event: overview
   "/events/:eventId/overview",
+  requireAuth,
+  requirePermission("analytics:view"),
   validate(analyticsEventParamsSchema, "params"),
   validate(analyticsOverviewQuerySchema, "query"),
   handleGetEventAnalyticsOverview,
@@ -94,6 +98,8 @@ router.get(
 router.get(
   // Event: insights
   "/events/:eventId/insights",
+  requireAuth,
+  requirePermission("analytics:view"),
   validate(analyticsEventParamsSchema, "params"),
   validate(analyticsInsightsQuerySchema, "query"),
   handleGetEventAnalyticsInsights,
@@ -107,6 +113,8 @@ router.get(
 router.get(
   // Survey: analytics
   "/events/:eventId/survey",
+  requireAuth,
+  requirePermission("analytics:view"),
   validate(analyticsEventParamsSchema, "params"),
   handleGetEventSurveyAnalytics,
 );
@@ -114,6 +122,8 @@ router.get(
 router.get(
   // Survey: overview (insight sections + analytics)
   "/events/:eventId/survey/overview",
+  requireAuth,
+  requirePermission("analytics:view"),
   validate(analyticsEventParamsSchema, "params"),
   handleGetEventSurveyAnalyticsOverview,
 );
@@ -121,6 +131,8 @@ router.get(
 router.get(
   // Survey: AI insight
   "/events/:eventId/survey/insights",
+  requireAuth,
+  requirePermission("analytics:view"),
   validate(analyticsEventParamsSchema, "params"),
   handleGetEventSurveyInsight,
 );

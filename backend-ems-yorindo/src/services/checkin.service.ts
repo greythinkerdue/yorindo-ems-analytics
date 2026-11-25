@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { Event, Registration } from "../models/index.ts";
 import { verifyRegistrationTicket } from "../utils/jwt.ts";
+import { bumpEventMetrics } from "./event-metric-rollup.service.ts";
 
 type CheckInOutcome = "checked_in" | "already_checked_in";
 
@@ -151,7 +152,7 @@ async function applyCheckIn(params: {
     };
   }
 
-  await Registration.findOneAndUpdate(
+  const checkedIn = await Registration.findOneAndUpdate(
     {
       _id: params.registrationId,
       eventId: params.eventId,
@@ -169,6 +170,12 @@ async function applyCheckIn(params: {
     },
     { returnDocument: "after" },
   ).lean();
+
+  // `approved` already counts checked_in registrations, so only attendance
+  // moves here. Use the write result: another scan may have won the race.
+  if (checkedIn) {
+    await bumpEventMetrics(params.eventId.toString(), { attendance: 1 });
+  }
 
   const registration = await getRegistrationListItemById(params.registrationId);
 

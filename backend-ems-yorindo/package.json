@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx src/server.ts",
-    "seed:dummy": "tsx src/scripts/seedDummy.mts"
+    "seed:dummy": "tsx src/scripts/seedDummy.mts",
+    "analytics:backfill": "tsx src/scripts/backfill-event-metrics.ts",
+    "tickets:complete": "tsx src/scripts/complete-ticket-delivery.ts"
   },
   "keywords": [],
   "author": "",

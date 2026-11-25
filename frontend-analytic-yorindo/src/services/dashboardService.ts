@@ -55,9 +55,9 @@ export interface DashboardOperationsBrief {
   cached: boolean;
 }
 
-export const fetchDashboardOverview = () =>
+export const fetchDashboardOverview = (refresh = false) =>
   api.get<DashboardOverview>(
-    `/api/v1/analytics/overview?ts=${Date.now()}`,
+    `/api/v1/analytics/overview${refresh ? "?refresh=1" : ""}`,
   );
 
 export const fetchDashboardOperationsBrief = (refresh = false) =>

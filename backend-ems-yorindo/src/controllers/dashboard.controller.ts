@@ -5,16 +5,18 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "../utils/apiResponse.ts";
-import { getDashboardOverview } from "../services/dashboard.service.ts";
+import { getCachedDashboardOverview } from "../services/dashboard-overview-cache.service.ts";
 import { getDashboardOperationsBrief } from "../services/dashboard-insight.service.ts";
 
 export async function handleGetDashboardOverview(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const result = await getDashboardOverview();
+    const raw = req.query.refresh;
+    const refresh = raw === "1" || raw === "true";
+    const result = await getCachedDashboardOverview(refresh);
     sendSuccess(res, 200, "Dashboard overview fetched", result);
   } catch (error) {
     next(error);

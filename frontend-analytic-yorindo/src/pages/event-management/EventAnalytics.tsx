@@ -104,9 +104,8 @@ const EventAnalytics = () => {
       setIsLoadingOverview(true);
       setOverviewError("");
 
-      const cacheBuster = `ts=${Date.now()}`;
       const result = await api.get<AnalyticsOverview>(
-        `/api/v1/analytics/events/${eventId}/overview?${cacheBuster}`,
+        `/api/v1/analytics/events/${eventId}/overview`,
       );
 
       setIsLoadingOverview(false);
@@ -137,8 +136,10 @@ const EventAnalytics = () => {
     setIsLoadingInsights(true);
     setInsightsError("");
 
+    // First load uses the DB cache. Only an explicit second click regenerates.
+    const shouldRefresh = Boolean(insights);
     const result = await api.get<AnalyticsInsights>(
-      `/api/v1/analytics/events/${eventId}/insights?refresh=1`,
+      `/api/v1/analytics/events/${eventId}/insights${shouldRefresh ? "?refresh=1" : ""}`,
     );
 
     setIsLoadingInsights(false);

@@ -8,13 +8,39 @@ import {
   getEventAnalyticsOverview,
   type EventAnalyticsOverview,
 } from "./event-analytic.service.ts";
-import { EventAnalyticInsightCache } from "../models/index.ts";
+import { EventAnalyticInsightCache, Registration } from "../models/index.ts";
 import { chat } from "../utils/llmClient.ts";
 
 export interface EventAnalyticsInsight {
   summary: string;
   highlights: string[];
   recommendations: string[];
+}
+
+/** Mirrors parseMonthRange() in event-analytic.service.ts without DB work. */
+function resolveMonthLabel(month?: string): string {
+  if (month) return month;
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Cheap cache signature (2 indexed queries) compared with the ~14 aggregate
+ * queries needed to rebuild the insight. Any new/updated registration changes
+ * it and invalidates the cached insight.
+ */
+async function buildSourceSignature(eventId: Types.ObjectId): Promise<string> {
+  const [count, latest] = await Promise.all([
+    Registration.countDocuments({ eventId }),
+    Registration.findOne({ eventId })
+      .select("updatedAt")
+      .sort({ updatedAt: -1 })
+      .lean<{ updatedAt: Date } | null>(),
+  ]);
+  const latestAt = latest?.updatedAt
+    ? new Date(latest.updatedAt).toISOString()
+    : "";
+  return `${count}:${latestAt}`;
 }
 
 /**
@@ -112,25 +138,35 @@ export async function getEventAnalyticsInsights(
   options?: { refresh?: boolean },
 ): Promise<EventAnalyticsInsight | null> {
   const refresh = options?.refresh ?? false;
-  const overview = await getEventAnalyticsOverview(eventId, month);
-  if (!overview) return null;
-
   const eventObjectId = new Types.ObjectId(eventId);
-  const monthLabel = overview.month;
+  const monthLabel = resolveMonthLabel(month);
 
+  // Cache check comes FIRST. Previously the 14-query overview was computed
+  // before this lookup, so a cache hit still paid the full aggregation cost.
+  let sourceSignature = "";
   if (!refresh) {
+    sourceSignature = await buildSourceSignature(eventObjectId);
     const cached = await EventAnalyticInsightCache.findOne({
       eventId: eventObjectId,
       month: monthLabel,
-    }).lean();
+    })
+      .select("summary highlights recommendations sourceSignature")
+      .lean();
 
-    if (cached) {
+    if (cached && cached.sourceSignature === sourceSignature) {
       return {
         summary: cached.summary,
         highlights: cached.highlights,
         recommendations: cached.recommendations,
       };
     }
+  }
+
+  const overview = await getEventAnalyticsOverview(eventId, month);
+  if (!overview) return null;
+
+  if (!sourceSignature) {
+    sourceSignature = await buildSourceSignature(eventObjectId);
   }
 
   const content = await chat([
@@ -154,6 +190,7 @@ export async function getEventAnalyticsInsights(
         summary: insight.summary,
         highlights: insight.highlights,
         recommendations: insight.recommendations,
+        sourceSignature,
         generatedAt: new Date(),
       },
     },

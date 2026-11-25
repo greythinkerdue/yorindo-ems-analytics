@@ -4,9 +4,12 @@
  */
 
 import { Event, Registration } from "../models/index.ts";
+import {
+  getAllEventMetrics,
+  getAnalyticsVersion,
+  type EventMetricRow,
+} from "./event-metric-rollup.service.ts";
 
-const APPROVED_STATUSES = ["approved", "checked_in", "check-in"] as const;
-const ATTENDANCE_STATUSES = ["checked_in", "check-in"] as const;
 const ACTIVE_STATUSES = ["upcoming", "registration", "ongoing"] as const;
 const TIMEZONE = "Asia/Jakarta";
 
@@ -61,16 +64,6 @@ export interface DashboardOverview {
   generatedAt: string;
 }
 
-type EventAggregateRow = {
-  _id: { toString(): string };
-  registrations: number;
-  approved: number;
-  attendance: number;
-  pending: number;
-  rejected: number;
-  ticketsNotSent: number;
-};
-
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -101,7 +94,7 @@ function buildTrend(
 
 function buildAttention(
   status: string,
-  row: EventAggregateRow,
+  row: EventMetricRow,
   approvalRate: number,
   attendanceRate: number,
 ): { attention: DashboardWatchItem["attention"]; reason: string } {
@@ -150,14 +143,16 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
   start.setDate(start.getDate() - 29);
   start.setHours(0, 0, 0, 0);
 
+  // Per-event counters come from the rollup collection instead of a full
+  // registrations scan. Audience/trend views still need snapshots/createdAt,
+  // so those aggregations remain (they are bounded and indexed separately).
   const [
     events,
-    aggregateRows,
+    metricRows,
     industryRows,
     cityRows,
     trendRows,
-    latestEventUpdate,
-    latestRegistrationUpdate,
+    metaVersion,
   ] = await Promise.all([
       Event.find({})
         .select("title status eventDate industry")
@@ -170,35 +165,7 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
             industry?: { name?: string | null } | null;
           }>
         >(),
-      Registration.aggregate([
-        {
-          $group: {
-            _id: "$eventId",
-            registrations: { $sum: 1 },
-            approved: {
-              $sum: {
-                $cond: [{ $in: ["$status", [...APPROVED_STATUSES]] }, 1, 0],
-              },
-            },
-            attendance: {
-              $sum: {
-                $cond: [{ $in: ["$status", [...ATTENDANCE_STATUSES]] }, 1, 0],
-              },
-            },
-            pending: {
-              $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
-            },
-            rejected: {
-              $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] },
-            },
-            ticketsNotSent: {
-              $sum: {
-                $cond: [{ $ne: ["$ticketDelivery.status", "sent"] }, 1, 0],
-              },
-            },
-          },
-        },
-      ]),
+      getAllEventMetrics(),
       Registration.aggregate([
         { $group: { _id: "$industrySnapshot.name", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
@@ -224,6 +191,14 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
           },
         },
       ]),
+      getAnalyticsVersion(),
+    ]);
+
+  // Before the first write/backfill there is no meta document yet; fall back
+  // to the source collections so `dataUpdatedAt` stays accurate on fresh DBs.
+  let dataUpdatedAt = now;
+  if (!metaVersion) {
+    const [latestEventUpdate, latestRegistrationUpdate] = await Promise.all([
       Event.findOne({})
         .select("updatedAt")
         .sort({ updatedAt: -1 })
@@ -233,44 +208,47 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
         .sort({ updatedAt: -1 })
         .lean<{ updatedAt: Date } | null>(),
     ]);
-
-  const dataUpdateTimes = [
-    latestEventUpdate?.updatedAt,
-    latestRegistrationUpdate?.updatedAt,
-  ]
-    .filter((value): value is Date => Boolean(value))
-    .map((value) => new Date(value).getTime())
-    .filter((value) => Number.isFinite(value) && value <= now.getTime());
-  const dataUpdatedAt = dataUpdateTimes.length
-    ? new Date(Math.max(...dataUpdateTimes))
-    : now;
-
-  const rowsByEvent = new Map<string, EventAggregateRow>();
-  for (const row of aggregateRows as EventAggregateRow[]) {
-    rowsByEvent.set(row._id.toString(), row);
+    const dataUpdateTimes = [
+      latestEventUpdate?.updatedAt,
+      latestRegistrationUpdate?.updatedAt,
+    ]
+      .filter((value): value is Date => Boolean(value))
+      .map((value) => new Date(value).getTime())
+      .filter((value) => Number.isFinite(value) && value <= now.getTime());
+    if (dataUpdateTimes.length) {
+      dataUpdatedAt = new Date(Math.max(...dataUpdateTimes));
+    }
+  } else {
+    const parsed = new Date(metaVersion);
+    if (!Number.isNaN(parsed.getTime())) dataUpdatedAt = parsed;
   }
 
-  const totalRegistrations = aggregateRows.reduce(
+  const rowsByEvent = new Map<string, EventMetricRow>();
+  for (const row of metricRows) {
+    rowsByEvent.set(row.eventId, row);
+  }
+
+  const totalRegistrations = metricRows.reduce(
     (total, row) => total + row.registrations,
     0,
   );
-  const totalApproved = aggregateRows.reduce(
+  const totalApproved = metricRows.reduce(
     (total, row) => total + row.approved,
     0,
   );
-  const totalAttendance = aggregateRows.reduce(
+  const totalAttendance = metricRows.reduce(
     (total, row) => total + row.attendance,
     0,
   );
-  const pendingApprovals = aggregateRows.reduce(
+  const pendingApprovals = metricRows.reduce(
     (total, row) => total + row.pending,
     0,
   );
-  const totalRejected = aggregateRows.reduce(
+  const totalRejected = metricRows.reduce(
     (total, row) => total + row.rejected,
     0,
   );
-  const ticketsNotSent = aggregateRows.reduce(
+  const ticketsNotSent = metricRows.reduce(
     (total, row) => total + row.ticketsNotSent,
     0,
   );

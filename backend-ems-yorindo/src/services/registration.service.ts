@@ -15,6 +15,7 @@ import {
   queueApprovedRegistrationTicketEmails,
   queueRegistrationTicketEmail,
 } from "./registration-ticket.service.ts";
+import { bumpEventMetrics } from "./event-metric-rollup.service.ts";
 
 interface RegistrationMeta {
   approvedCount: number;
@@ -333,6 +334,9 @@ export async function approveRegistration(
     return null;
   }
 
+  // Filter above guarantees pending -> approved, so the delta is exact.
+  await bumpEventMetrics(eventId, { pending: -1, approved: 1 });
+
   const ticketDelivery = await queueRegistrationTicketEmail(
     updatedRegistration._id.toString(),
   );
@@ -365,7 +369,7 @@ export async function rejectRegistration(
     setFields["approval.rejectionReason"] = rejectionReason;
   }
 
-  return Registration.findOneAndUpdate(
+  const rejected = await Registration.findOneAndUpdate(
     {
       _id: new Types.ObjectId(registrationId),
       eventId: new Types.ObjectId(eventId),
@@ -374,6 +378,12 @@ export async function rejectRegistration(
     { $set: setFields },
     { returnDocument: "after" },
   ).lean();
+
+  if (rejected) {
+    await bumpEventMetrics(eventId, { pending: -1, rejected: 1 });
+  }
+
+  return rejected;
 }
 
 export async function bulkApproveRegistrations(
@@ -446,6 +456,12 @@ export async function bulkApproveRegistrations(
   }));
 
   const result = await Registration.bulkWrite(ops);
+  if (result.modifiedCount > 0) {
+    await bumpEventMetrics(eventId, {
+      pending: -result.modifiedCount,
+      approved: result.modifiedCount,
+    });
+  }
   const approvedRegistrationIds = (
     await Registration.find({
       _id: { $in: pendingRegistrations.map((registration) => registration._id) },
@@ -488,6 +504,13 @@ export async function rejectAllPending(eventId: string, userId: string) {
     },
   );
 
+  if (result.modifiedCount > 0) {
+    await bumpEventMetrics(eventId, {
+      pending: -result.modifiedCount,
+      rejected: result.modifiedCount,
+    });
+  }
+
   return { modifiedCount: result.modifiedCount };
 }
 
@@ -510,6 +533,13 @@ export async function bulkRejectRegistrations(
       },
     },
   );
+
+  if (result.modifiedCount > 0) {
+    await bumpEventMetrics(eventId, {
+      pending: -result.modifiedCount,
+      rejected: result.modifiedCount,
+    });
+  }
 
   return { modifiedCount: result.modifiedCount };
 }

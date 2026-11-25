@@ -84,7 +84,9 @@ export default function EventRegistrationPage() {
           const msg = await res.text().catch(() => "");
           throw new Error(msg || `Request failed (${res.status})`);
         }
-        return (await res.json()) as unknown;
+        const body = await res.text();
+        if (!body.trim()) throw new Error(`Empty response (${res.status})`);
+        return JSON.parse(body) as unknown;
       })
       .then((raw) => {
         const eventsRes = raw as EventsResponse;

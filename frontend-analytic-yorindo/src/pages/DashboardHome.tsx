@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -194,10 +194,10 @@ export default function DashboardHome() {
   const [watchFilter, setWatchFilter] = useState<WatchFilter>("all");
   const [watchPage, setWatchPage] = useState(1);
 
-  const loadOverview = async () => {
+  const loadOverview = useCallback(async (refresh = false) => {
     setIsLoadingOverview(true);
     setOverviewError("");
-    const result = await fetchDashboardOverview();
+    const result = await fetchDashboardOverview(refresh);
     setIsLoadingOverview(false);
 
     if (result.error) {
@@ -206,12 +206,12 @@ export default function DashboardHome() {
       return;
     }
     setOverview(result.data ?? null);
-  };
+  }, []);
 
-  const loadBrief = async () => {
+  const loadBrief = useCallback(async (refresh = false) => {
     setIsLoadingBrief(true);
     setBriefError("");
-    const result = await fetchDashboardOperationsBrief();
+    const result = await fetchDashboardOperationsBrief(refresh);
     setIsLoadingBrief(false);
 
     if (result.error) {
@@ -219,14 +219,18 @@ export default function DashboardHome() {
       return;
     }
     setBrief(result.data ?? null);
-  };
+  }, []);
 
   useEffect(() => {
     void loadOverview();
     void loadBrief();
-  }, []);
+  }, [loadOverview, loadBrief]);
 
-  const allWatchlist = overview?.watchlist ?? [];
+  const reloadDashboard = () => {
+    void Promise.allSettled([loadOverview(true), loadBrief(true)]);
+  };
+
+  const allWatchlist = useMemo(() => overview?.watchlist ?? [], [overview?.watchlist]);
   const watchCounts = useMemo<Record<WatchFilter, number>>(
     () => ({
       all: allWatchlist.length,
@@ -314,15 +318,15 @@ export default function DashboardHome() {
           </span>
           <button
             type="button"
-            onClick={() => void loadOverview()}
-            disabled={isLoadingOverview}
+            onClick={reloadDashboard}
+            disabled={isLoadingOverview || isLoadingBrief}
             title="Muat ulang data"
             aria-label="Muat ulang data"
             className="inline-flex items-center gap-1 rounded-full border border-[#D7E1F0] bg-white px-2 py-1 text-[10px] font-semibold text-[#0A2647] transition hover:bg-[#F5F8FF] disabled:opacity-60"
           >
             <RefreshCw
               size={12}
-              className={isLoadingOverview ? "animate-spin" : ""}
+              className={isLoadingOverview || isLoadingBrief ? "animate-spin" : ""}
             />
             Muat ulang
           </button>
@@ -621,8 +625,16 @@ export default function DashboardHome() {
             </div>
 
             {briefError ? (
-              <div className="mt-4 rounded-[14px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-xs text-[#991B1B]">
-                {briefError}
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-xs text-[#991B1B]">
+                <span>{briefError}</span>
+                <button
+                  type="button"
+                  onClick={() => void loadBrief(true)}
+                  disabled={isLoadingBrief}
+                  className="shrink-0 rounded-full border border-[#FCA5A5] px-2.5 py-1 font-semibold disabled:opacity-60"
+                >
+                  Coba lagi
+                </button>
               </div>
             ) : null}
 

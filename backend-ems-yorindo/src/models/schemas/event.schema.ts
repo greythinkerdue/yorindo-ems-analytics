@@ -224,4 +224,7 @@ EventSchema.index({ "industry.refId": 1 });
 // Slug uniqueness.
 EventSchema.index({ slug: 1 }, { unique: true });
 
+// Freshness fallback used by the dashboard before analytics_meta exists.
+EventSchema.index({ updatedAt: -1 });
+
 export const Event = model<IEvent>("Event", EventSchema);

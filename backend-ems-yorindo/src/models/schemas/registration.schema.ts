@@ -144,6 +144,11 @@ RegistrationSchema.index({ "citySnapshot.refId": 1 });
 RegistrationSchema.index({ eventId: 1, "ticketDelivery.status": 1 });
 RegistrationSchema.index({ "ticket.qrCode": 1 }, { unique: true, sparse: true });
 RegistrationSchema.index({ "companySnapshot.name": 1 });
+// Dashboard audience/trend aggregations and the pre-backfill freshness fallback.
+RegistrationSchema.index({ "industrySnapshot.name": 1 });
+RegistrationSchema.index({ "citySnapshot.name": 1 });
+RegistrationSchema.index({ createdAt: -1 });
+RegistrationSchema.index({ updatedAt: -1 });
 
 export const Registration = model<IRegistration>(
   "Registration",

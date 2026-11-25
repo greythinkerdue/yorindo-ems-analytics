@@ -17,6 +17,8 @@ export interface IEventAnalyticInsightCache {
   summary: string;
   highlights: string[];
   recommendations: string[];
+  /** Signature of the source data. A mismatch means the insight is stale. */
+  sourceSignature?: string;
   generatedAt: Date;
 }
 
@@ -26,7 +28,6 @@ const EventAnalyticInsightCacheSchema = new Schema<IEventAnalyticInsightCache>(
       type: Schema.Types.ObjectId,
       ref: "Event",
       required: true,
-      index: true,
     },
     month: {
       type: String,
@@ -45,6 +46,10 @@ const EventAnalyticInsightCacheSchema = new Schema<IEventAnalyticInsightCache>(
     recommendations: {
       type: [String],
       default: [],
+    },
+    sourceSignature: {
+      type: String,
+      default: "",
     },
     generatedAt: {
       type: Date,

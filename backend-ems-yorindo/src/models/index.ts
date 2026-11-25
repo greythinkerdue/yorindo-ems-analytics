@@ -44,6 +44,13 @@ export { AuditLog } from "./schemas/audit-log.schema.js";
 // --- Communication ---
 export { CommunicationCampaign } from "./schemas/communication-campaign.schema.js";
 
-// --- Analytics (cached AI insight) ---
+// --- Analytics (cached AI insight & derived dashboard results) ---
 export { EventAnalyticInsightCache } from "./schemas/event-analytic-insight-cache.schema.js";
 export { EventAiInsightCache } from "./schemas/event-ai-insight-cache.schema.js";
+export {
+  DashboardCache,
+  DASHBOARD_BRIEF_CACHE_KEY,
+  DASHBOARD_OVERVIEW_CACHE_KEY,
+} from "./schemas/dashboard-cache.schema.js";
+export { AnalyticsMeta, ANALYTICS_META_KEY } from "./schemas/analytics-meta.schema.js";
+export { EventMetricRollup } from "./schemas/event-metric-rollup.schema.js";

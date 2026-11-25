@@ -6,6 +6,10 @@
 import { Event, Registration } from "../models/index.ts";
 import { Types } from "mongoose";
 import { STATUS } from "../models/constants/enums.ts";
+import {
+  getAllEventMetrics,
+  getEventMetric,
+} from "./event-metric-rollup.service.ts";
 
 export interface EventParticipantAnalyticsSummary {
   eventId: string;
@@ -45,8 +49,6 @@ export interface EventAnalyticsOverview {
   benchmark: EventAnalyticsBenchmark;
 }
 
-const APPROVED_STATUSES = ["approved", "checked_in", "check-in"] as const;
-const ATTENDANCE_STATUSES = ["checked_in", "check-in"] as const;
 const TIMEZONE = "Asia/Jakarta";
 
 function round1(value: number): number {
@@ -86,29 +88,10 @@ function buildDailySeries(
 async function getEventAnalyticsBenchmark(
   eventId: string,
 ): Promise<EventAnalyticsBenchmark> {
-  const rows = (await Registration.aggregate([
-    { $match: { eventId: { $ne: new Types.ObjectId(eventId) } } },
-    {
-      $group: {
-        _id: "$eventId",
-        registrations: { $sum: 1 },
-        approved: {
-          $sum: {
-            $cond: [{ $in: ["$status", [...APPROVED_STATUSES]] }, 1, 0],
-          },
-        },
-        attendance: {
-          $sum: {
-            $cond: [{ $in: ["$status", [...ATTENDANCE_STATUSES]] }, 1, 0],
-          },
-        },
-      },
-    },
-  ])) as Array<{
-    registrations: number;
-    approved: number;
-    attendance: number;
-  }>;
+  // Rollup rows already contain the same counts; no full registrations scan.
+  const rows = (await getAllEventMetrics()).filter(
+    (row) => row.eventId !== eventId,
+  );
 
   const usable = rows.filter(
     (row) => row.registrations > 0 && row.approved > 0,
@@ -141,25 +124,14 @@ export async function getEventParticipantAnalytics(
   const eventExists = await Event.exists({ _id: eventId });
   if (!eventExists) return null;
 
-  const [
-    totalPending,
-    totalRegistrations,
-    totalApproved,
-    totalAttendance,
-    totalRejected,
-  ] = await Promise.all([
-    Registration.countDocuments({ eventId, status: "pending" }),
-    Registration.countDocuments({ eventId }),
-    Registration.countDocuments({
-      eventId,
-      status: { $in: APPROVED_STATUSES },
-    }),
-    Registration.countDocuments({
-      eventId,
-      status: { $in: ATTENDANCE_STATUSES },
-    }),
-    Registration.countDocuments({ eventId, status: "rejected" }),
-  ]);
+  // One rollup read replaces five countDocuments on the source collection.
+  const {
+    pending: totalPending,
+    registrations: totalRegistrations,
+    approved: totalApproved,
+    attendance: totalAttendance,
+    rejected: totalRejected,
+  } = await getEventMetric(eventId);
 
   const attendanceRate =
     totalApproved > 0 ? (totalAttendance / totalApproved) * 100 : 0;

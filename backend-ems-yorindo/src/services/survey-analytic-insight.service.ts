@@ -3,8 +3,38 @@
  * @description AI-generated insights for event survey responses.
  */
 
-import { Event, SurveyResponse } from "../models/index.ts";
+import {
+  Event,
+  EventAiInsightCache,
+  SurveyResponse,
+} from "../models/index.ts";
 import { chat } from "../utils/llmClient.ts";
+
+/** Bound the LLM prompt. totalResponses keeps the real count for the UI. */
+const INSIGHT_SAMPLE_LIMIT = 200;
+
+/** Safety net: regenerate at least once a day even if the version is stable. */
+const INSIGHT_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function readSourceState(
+  eventId: string,
+): Promise<{ totalResponses: number; signature: string }> {
+  const [totalResponses, latest] = await Promise.all([
+    SurveyResponse.countDocuments({ eventId }),
+    SurveyResponse.findOne({ eventId })
+      .select("submittedAt updatedAt")
+      .sort({ submittedAt: -1 })
+      .lean<{ submittedAt?: Date; updatedAt?: Date } | null>(),
+  ]);
+
+  const latestAt = latest?.updatedAt ?? latest?.submittedAt;
+  return {
+    totalResponses,
+    signature: `${totalResponses}:${
+      latestAt ? new Date(latestAt).toISOString() : ""
+    }`,
+  };
+}
 
 export class SurveyInsightUnavailableError extends Error {
   statusCode = 400;
@@ -88,21 +118,54 @@ function safeParse(content: string): SurveyAnalyticsInsight {
 
 export async function getEventSurveyInsight(
   eventId: string,
+  options?: { refresh?: boolean },
 ): Promise<EventSurveyInsightResult | null> {
+  const refresh = options?.refresh ?? false;
+
   const event = await Event.findById(eventId).select("title").lean();
   if (!event) {
     return null;
   }
 
-  const rawResponses = await SurveyResponse.find({ eventId })
-    .select("answers")
-    .lean();
+  // Cheap version check before touching the (potentially large) answers and
+  // before calling the LLM. Previously every request regenerated the insight.
+  const source = await readSourceState(eventId);
 
-  if (rawResponses.length === 0) {
+  if (!refresh && source.totalResponses > 0) {
+    const cached = await EventAiInsightCache.findOne({ eventId })
+      .select("insight totalResponses sourceSignature generatedAt")
+      .lean<{
+        insight: SurveyAnalyticsInsight;
+        totalResponses: number;
+        sourceSignature: string;
+        generatedAt: Date;
+      } | null>();
+
+    const stillFresh =
+      cached?.generatedAt &&
+      Date.now() - new Date(cached.generatedAt).getTime() < INSIGHT_TTL_MS;
+
+    if (cached && stillFresh && cached.sourceSignature === source.signature) {
+      return {
+        eventId,
+        insight: cached.insight,
+        // Always report the live count, not the one stored with the cache.
+        totalResponses: source.totalResponses,
+      };
+    }
+  }
+
+  if (source.totalResponses === 0) {
     throw new SurveyInsightUnavailableError(
       "Belum ada data survey untuk dianalisis oleh AI.",
     );
   }
+
+  const rawResponses = await SurveyResponse.find({ eventId })
+    .select("answers")
+    .sort({ submittedAt: -1 })
+    .limit(INSIGHT_SAMPLE_LIMIT)
+    .lean();
 
   const cleanDataForAI = rawResponses.map((response) => response.answers);
 
@@ -120,9 +183,22 @@ export async function getEventSurveyInsight(
 
   const parsedInsight = safeParse(String(insight));
 
+  await EventAiInsightCache.findOneAndUpdate(
+    { eventId },
+    {
+      $set: {
+        insight: parsedInsight,
+        totalResponses: source.totalResponses,
+        sourceSignature: source.signature,
+        generatedAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+
   return {
     eventId,
     insight: parsedInsight,
-    totalResponses: rawResponses.length,
+    totalResponses: source.totalResponses,
   };
 }
