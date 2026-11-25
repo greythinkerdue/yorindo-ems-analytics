@@ -1,8 +1,16 @@
-import { useDeferredValue, useEffect, useRef, useState, useMemo } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  type KeyboardEvent,
+} from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   LoaderCircle,
   Mail,
+  RefreshCw,
   Search,
   SendHorizontal,
   Sparkles,
@@ -99,6 +107,8 @@ type GenerateEmailContentResponse = {
   previewText: string;
   bodyHtml: string;
 };
+
+type PromptSuggestionsResponse = string[];
 
 type EmailEditorValue = {
   html: string;
@@ -568,6 +578,10 @@ export function Communication() {
   const [lastCommittedSignature, setLastCommittedSignature] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState("");
   const deferredSearch = useDeferredValue(searchInput);
   const latestRequestRef = useRef(0);
   const previewRequestRef = useRef(0);
@@ -1386,6 +1400,117 @@ export function Communication() {
       })),
     ];
   }, [audience?.filterOptions.cities]);
+
+  const loadPromptSuggestions = async (eventId: string) => {
+    if (!eventId) {
+      setPromptSuggestions([]);
+      setSuggestionsError("");
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    setSuggestionsError("");
+
+    const segmentParts = [
+      filters.status !== "all"
+        ? `status: ${STATUS_OPTIONS.find((item) => item.value === filters.status)?.label ?? filters.status}`
+        : "",
+      filters.participantType !== "all"
+        ? `participant type: ${PARTICIPANT_TYPE_OPTIONS.find((item) => item.value === filters.participantType)?.label ?? filters.participantType}`
+        : "",
+      filters.companyId
+        ? `company: ${companyOptions.find((item) => item.value === filters.companyId)?.label ?? filters.companyId}`
+        : "",
+      filters.industryId
+        ? `industry: ${industryOptions.find((item) => item.value === filters.industryId)?.label ?? filters.industryId}`
+        : "",
+      filters.jobTitleId
+        ? `job title: ${jobTitleOptions.find((item) => item.value === filters.jobTitleId)?.label ?? filters.jobTitleId}`
+        : "",
+      filters.cityId
+        ? `city: ${cityOptions.find((item) => item.value === filters.cityId)?.label ?? filters.cityId}`
+        : "",
+      selectedRecipientCount > 0
+        ? `${selectedRecipientCount} selected recipients`
+        : "",
+    ].filter(Boolean);
+
+    const result = await api.post<PromptSuggestionsResponse>(
+      `${apiPaths.communications}/suggest-prompts`,
+      {
+        eventId,
+        currentSubject: subject.trim() || undefined,
+        currentPreviewText: previewText.trim() || undefined,
+        currentBodyText: editorValue.text.trim() || undefined,
+        templateId,
+        audienceContext: segmentParts.join("; ") || undefined,
+        variation: Date.now(),
+      },
+    );
+
+    setIsLoadingSuggestions(false);
+
+    if (result.error || !result.data) {
+      setPromptSuggestions([]);
+      setSuggestionsError(
+        result.error ?? "Failed to load prompt suggestions.",
+      );
+      return;
+    }
+
+    setPromptSuggestions(result.data);
+    setActiveSuggestion(0);
+  };
+
+  const applyPromptSuggestion = (index: number) => {
+    const suggestion = promptSuggestions[index];
+    if (!suggestion) {
+      return;
+    }
+    setAiPrompt(suggestion);
+    setFeedback(null);
+  };
+
+  const handlePromptKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!promptSuggestions.length || isLoadingSuggestions) {
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestion((current) =>
+        (current + 1) % promptSuggestions.length,
+      );
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestion((current) =>
+        (current - 1 + promptSuggestions.length) % promptSuggestions.length,
+      );
+      return;
+    }
+
+    if (event.key === "Tab" && !event.shiftKey) {
+      event.preventDefault();
+      applyPromptSuggestion(activeSuggestion);
+      setActiveSuggestion((current) =>
+        (current + 1) % promptSuggestions.length,
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (!filters.eventId) {
+      setPromptSuggestions([]);
+      setSuggestionsError("");
+      return;
+    }
+    void loadPromptSuggestions(filters.eventId);
+    // Suggestions follow the selected event/template; manual refresh covers edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.eventId, templateId]);
 
   const feedbackToast = feedback ? (
     <div className="fixed right-4 top-4 z-50 w-[min(92vw,460px)]">
@@ -2850,26 +2975,88 @@ export function Communication() {
                       AI Email Generator
                     </span>
                   </Label>
-                  {aiPrompt.trim() ? (
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => setAiPrompt("")}
-                      className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+                      onClick={() => void loadPromptSuggestions(filters.eventId)}
+                      disabled={isLoadingSuggestions || !filters.eventId}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-500 transition-colors hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Ask AI for fresh prompt ideas"
                     >
-                      Clear
+                      <RefreshCw
+                        className={`h-3 w-3 ${isLoadingSuggestions ? "animate-spin" : ""}`}
+                      />
+                      Refresh ideas
                     </button>
-                  ) : null}
+                    {aiPrompt.trim() ? (
+                      <button
+                        type="button"
+                        onClick={() => setAiPrompt("")}
+                        className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <textarea
                   id="communication-ai-prompt"
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={handlePromptKeyDown}
                   maxLength={500}
                   rows={2}
                   disabled={isGenerating}
+                  aria-describedby="communication-ai-suggestions"
                   placeholder="Optional — provide instructions for AI, e.g.: &quot;Create an invitation copy that emphasizes the networking session and highlights speakers from BSSN&quot;"
                   className="w-full resize-none rounded-lg border border-indigo-200 bg-white px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-all disabled:opacity-60"
                 />
+                <div id="communication-ai-suggestions" className="space-y-2">
+                  {isLoadingSuggestions ? (
+                    <div className="flex items-center gap-2 text-[11px] text-indigo-500">
+                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                      Building prompt ideas from this event…
+                    </div>
+                  ) : suggestionsError ? (
+                    <p className="text-[11px] text-rose-500">
+                      {suggestionsError}
+                    </p>
+                  ) : promptSuggestions.length ? (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-400">
+                          Suggested prompts · Tab to apply
+                        </p>
+                        <span className="text-[10px] text-slate-400">
+                          ↑ ↓ to choose
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {promptSuggestions.map((suggestion, index) => (
+                          <button
+                            key={`${suggestion}-${index}`}
+                            type="button"
+                            onMouseEnter={() => setActiveSuggestion(index)}
+                            onFocus={() => setActiveSuggestion(index)}
+                            onClick={() => applyPromptSuggestion(index)}
+                            title="Press Tab in the prompt box to apply"
+                            className={`flex min-w-[220px] flex-1 items-start gap-2 rounded-lg border px-3 py-2 text-left text-[11px] leading-5 transition ${
+                              activeSuggestion === index
+                                ? "border-indigo-400 bg-white text-indigo-900 ring-1 ring-indigo-200"
+                                : "border-indigo-100 bg-white/70 text-slate-600 hover:border-indigo-300"
+                            }`}
+                          >
+                            <span className="font-bold text-indigo-500">
+                              {index + 1}
+                            </span>
+                            <span className="break-words">{suggestion}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[11px] text-slate-400">
                     AI will fill in Subject, Preview Text, and Body based on the event context.

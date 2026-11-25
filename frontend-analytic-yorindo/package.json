@@ -21,6 +21,8 @@
     "@tiptap/react": "^3.20.4",
     "@tiptap/starter-kit": "^3.20.4",
     "axios": "^1.14.0",
+    "baseline-browser-mapping": "^2.11.39",
+    "caniuse-lite": "^1.0.30001827",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -63,5 +65,9 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "msw@2.12.14": true
   }
 }

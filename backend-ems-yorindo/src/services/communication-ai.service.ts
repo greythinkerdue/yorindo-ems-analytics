@@ -276,3 +276,127 @@ export async function generateEmailContent(
 
   return result;
 }
+
+export interface GeneratePromptSuggestionsInput {
+  eventId: string;
+  currentSubject?: string | undefined;
+  currentPreviewText?: string | undefined;
+  currentBodyText?: string | undefined;
+  templateId?: string | undefined;
+  /** Short description of the segment selected in the composer. */
+  audienceContext?: string | undefined;
+  /** Changes on every request so repeated calls produce fresh ideas. */
+  variation?: number | undefined;
+}
+
+const SUGGESTION_SYSTEM_PROMPT =
+  "You are an email campaign strategist for Yorindo Communication, an event organizer " +
+  "connecting technology vendors with decision makers across Indonesian industries. " +
+  "You recommend short prompt instructions that an admin can apply to an AI Email Generator. " +
+  "Ground every recommendation only in the supplied context. " +
+  "Never invent speakers, session names, deadlines, numbers, survey results, campaigns, or benefits. " +
+  "Use professional English. No emojis, no markdown. " +
+  "Reply ONLY with a JSON array of strings.";
+
+function buildSuggestionPrompt(
+  eventContext: string,
+  audienceContext: string,
+  input: GeneratePromptSuggestionsInput,
+): string {
+  const existing: string[] = [];
+  if (input.currentSubject?.trim()) {
+    existing.push(`Current subject: "${input.currentSubject.trim()}"`);
+  }
+  if (input.currentPreviewText?.trim()) {
+    existing.push(`Current preview text: "${input.currentPreviewText.trim()}"`);
+  }
+  if (input.currentBodyText?.trim()) {
+    existing.push(`Current body: "${input.currentBodyText.trim().slice(0, 600)}"`);
+  }
+
+  const toneGuide = input.templateId
+    ? TEMPLATE_TONE_MAP[input.templateId] ?? ""
+    : "";
+
+  return (
+    `Recommend 3 distinct prompt instructions for an AI Email Generator.\n\n` +
+    `Event Context:\n${eventContext}` +
+    audienceContext +
+    (toneGuide ? `\nSelected Template Tone: ${toneGuide}` : "") +
+    (input.audienceContext?.trim()
+      ? `\nSelected Segment: ${input.audienceContext.trim()}`
+      : "") +
+    (existing.length
+      ? `\nExisting Draft Content:\n${existing.join("\n")}`
+      : "") +
+    `\nVariation seed: ${input.variation ?? 0}\n\n` +
+    `Rules:\n` +
+    `- Each item must be an actionable instruction for improving the email copy.\n` +
+    `- Use only facts available in the context above. Do not invent anything.\n` +
+    `- Each item: 8-20 words, maximum 120 characters.\n` +
+    `- Do not repeat the same angle across the 3 items.\n` +
+    `- Do not mention these rules in the output.\n\n` +
+    `Reply with exactly this JSON shape (no code block):\n` +
+    `["instruction one","instruction two","instruction three"]`
+  );
+}
+
+function parseSuggestionArray(content: string): string[] {
+  try {
+    const cleaned = content
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    const parsed = JSON.parse(cleaned) as unknown;
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim().replace(/\s+/g, " "))
+      .filter((item) => item.length > 0)
+      .slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+export async function generatePromptSuggestions(
+  input: GeneratePromptSuggestionsInput,
+): Promise<string[]> {
+  const event = await Event.findById(input.eventId)
+    .select("title description category industry eventDate location status")
+    .lean();
+
+  if (!event) {
+    throw new Error("Event not found.");
+  }
+
+  const audienceStats = await getAudienceStats(input.eventId);
+  const prompt = buildSuggestionPrompt(
+    buildEventContext(event),
+    buildAudienceContext(audienceStats),
+    input,
+  );
+
+  const content = await chat([
+    {
+      role: "developer",
+      content: SUGGESTION_SYSTEM_PROMPT,
+    },
+    {
+      role: "user",
+      content: prompt,
+    },
+  ]);
+
+  const suggestions = parseSuggestionArray(content);
+
+  if (!suggestions.length) {
+    throw new Error("Failed to process AI suggestions. Please try again.");
+  }
+
+  return suggestions;
+}

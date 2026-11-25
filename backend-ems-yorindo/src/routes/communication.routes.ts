@@ -16,7 +16,10 @@ import {
   type CommunicationAudienceFilters,
 } from "../services/communication.service.ts";
 import { COMMUNICATION_EMAIL_TEMPLATE_IDS } from "../services/communication-template.service.ts";
-import { generateEmailContent } from "../services/communication-ai.service.ts";
+import {
+  generateEmailContent,
+  generatePromptSuggestions,
+} from "../services/communication-ai.service.ts";
 
 const communicationRouter = Router();
 const communicationTemplateSchema = z.enum(COMMUNICATION_EMAIL_TEMPLATE_IDS);
@@ -389,6 +392,52 @@ communicationRouter.post(
         error instanceof Error
           ? error.message
           : "Failed to generate email content.",
+      );
+    }
+  },
+);
+
+const suggestPromptsBodySchema = z.object({
+  eventId: z.string().trim().min(1, "eventId is required"),
+  currentSubject: z.string().trim().optional(),
+  currentPreviewText: z.string().trim().optional(),
+  currentBodyText: z.string().trim().optional(),
+  templateId: communicationTemplateSchema.optional(),
+  audienceContext: z.string().trim().max(300).optional(),
+  variation: z.number().int().optional(),
+});
+
+communicationRouter.post(
+  "/suggest-prompts",
+  requireAuth,
+  requirePermission("communication:view"),
+  async (req, res) => {
+    const parsedBody = suggestPromptsBodySchema.safeParse(req.body);
+
+    if (!parsedBody.success) {
+      return sendError(
+        res,
+        400,
+        "Invalid prompt suggestion request payload.",
+        parsedBody.error.flatten(),
+      );
+    }
+
+    try {
+      const result = await generatePromptSuggestions(parsedBody.data);
+      return sendSuccess(
+        res,
+        200,
+        "Prompt suggestions generated successfully.",
+        result,
+      );
+    } catch (error) {
+      return sendError(
+        res,
+        400,
+        error instanceof Error
+          ? error.message
+          : "Failed to generate prompt suggestions.",
       );
     }
   },
